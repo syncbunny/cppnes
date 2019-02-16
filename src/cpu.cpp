@@ -25,12 +25,14 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define UPDATE_N(x) ( ((x)&0x80)? SET_Z():UNSET_Z() )
 #define UPDATE_NZ(x) ( ((x)&0x80)? SET_N():((x)==0)? SET_Z():UNSET_NZ() )
 
-#define PUSH2(x) (mMapper->write2Bytes(0x0100+mS, (x)), mS -= 2)
+#define PUSH2(x) (mMapper->push2Bytes(0x0100+mS, (x)), mS -= 2)
+#define POP2() (mS += 2, mMapper->pop2Bytes(0x0100+mS-2))
 
 #define LDA(x) ((mA = (x)), UPDATE_NZ(mA))
 #define STA(x) (mMapper->write1Byte((x), mA))
 #define JSR(x) (PUSH2(mPC+1), mPC=(x))
 #define BPL(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
+#define RTS() (mPC = POP2(), mPC+=1)
 
 #define IMM(x) (mMapper->read1Byte(x))
 #define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -92,9 +94,9 @@ void CPU::clock() {
 	case 0x10: // BPL $XX
 		BPL(REL(mPC));
 	 	break;
-	//case 0x60: // RTS
-	//	RTS();
-	//	break;
+	case 0x60: // RTS
+		RTS();
+		break;
 	case 0xAD: // LDA $XXXX
 		LDA(ABS(mPC));
 		break;

@@ -48,11 +48,31 @@ void Mapper::write2Bytes(uint16_t addr, uint16_t val) {
 	write1Byte(addr+1, val>>8);
 }
 
+void Mapper::push2Bytes(uint16_t addr, uint16_t val) {
+	write1Byte(addr--, val>>8);
+	write1Byte(addr--, val&0xFF);
+}
+
+uint16_t Mapper::pop2Bytes(uint16_t addr) {
+	uint16_t ret;
+
+	ret = read1Byte(++addr);
+	ret |= ((uint16_t)read1Byte(++addr)) << 8;
+
+	return ret;
+}
+
 uint8_t Mapper::read1Byte(uint16_t addr) {
 	uint8_t ret = 0;
 
-	if (addr >= 0x8000) {
+	if (addr <= 0x07FF) {
+		ret = mWRAM[addr];
+	} else if (addr >= 0x8000) {
 		ret = mPROM[addr-0x8000];
+	} else {
+		char msg[1024];
+		sprintf(msg, "Mapper::readByte: unmapped address(%04x)", addr);
+		throw std::runtime_error(msg);
 	}
 
 	return ret;
