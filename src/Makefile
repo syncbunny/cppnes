@@ -5,7 +5,7 @@ LDFLAGS=
 LIBS=
 
 TARGET=nes
-OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o
+OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o apu.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
@@ -22,6 +22,8 @@ cpu.o: cpu.cpp cpu.h
 	${CXX} ${CXXFLAGS} cpu.cpp
 ppu.o: ppu.cpp ppu.h
 	${CXX} ${CXXFLAGS} ppu.cpp
+apu.o: apu.cpp apu.h
+	${CXX} ${CXXFLAGS} apu.cpp
 
 clean:
 	-rm -f ${TARGET} ${OBJS}
