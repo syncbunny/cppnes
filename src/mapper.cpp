@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include "mapper.h"
 #include "ppu.h"
+#include "apu.h"
 
 Mapper::Mapper()
 :mNo(0){
@@ -25,6 +26,10 @@ void Mapper::setPPU(PPU* ppu) {
 	mPPU = ppu;
 }
 
+void Mapper::setAPU(APU* apu) {
+	mAPU = apu;
+}
+
 void Mapper::setNo(uint8_t no) {
 	mNo = no;
 }
@@ -36,6 +41,14 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPPU->setCR1(val);
 	} else if (addr == 0x2001) {
 		mPPU->setCR2(val);
+	} else if (addr == 0x4010) {
+		mAPU->setDMC1(val);
+	} else if (addr == 0x4011) {
+		mAPU->setDMC2(val);
+	} else if (addr == 0x4015) {
+		mAPU->setChCtrl(val);
+	} else if (addr == 0x4017) {
+		mAPU->setFrameCounter(val);
 	} else {
 		char msg[1024];
 		sprintf(msg, "Mapper::write1Byte: unmapped address(%04x)", addr);
