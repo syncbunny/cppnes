@@ -32,14 +32,21 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define LDX(x) ((mX = (x)), UPDATE_NZ(mX))
 #define LDY(x) ((mY = (x)), UPDATE_NZ(mY))
 #define STA(x) (mMapper->write1Byte((x), mA))
+#define INC(x) (_addr = (x), mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
+#define DEX() (UPDATE_NZ(--mX))
+#define DEY() (UPDATE_NZ(--mY))
 #define JSR(x) (PUSH2(mPC+1), mPC=(x))
 #define BPL(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
+#define BNE(x) (mPC = ((mP&FLG_Z)==0)? mPC+1:mPC+1+(signed char)(x))
 #define RTS() (mPC = POP2(), mPC+=1)
+#define SEI() (SET_I())
 
 #define IMM(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
 #define REL(x) (mMapper->read1Byte(mPC))
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
+#define INDIRECT(x) (mMapper->read2Bytes((x)))
+#define IND_Y(x) ((x)+(uint16_t)(mY))
 
 int clockTable[] = {
 	/* xx    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F */
@@ -92,8 +99,14 @@ void CPU::clock() {
 		return;
 	}
 
+	// temporary variables
+	uint8_t _mem;
+	uint8_t _addr;
+
+	// read opcode and exam it.
 	uint8_t o = mMapper->read1Byte(mPC++);
 	switch(o) {
+	// at this point, mPC is first byte of operand.
 	case 0x10: // BPL $XX
 		BPL(REL(mPC));
 	 	break;
@@ -109,8 +122,17 @@ void CPU::clock() {
 	case 0x20: // JSR $XXXX
 		JSR(ABS(mPC));
 		break;
+	case 0x78: //SEI
+		SEI();
+		break;
+	case 0x88: // DEY
+		DEY();
+		break;
 	case 0x8D: // STA $XXXX
 		STA(ABS(mPC));
+		break;
+	case 0x91: // STA ($NN), Y
+		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
 	case 0xA0: // LDY #$XX
 		LDY(IMM(mPC));
@@ -120,6 +142,15 @@ void CPU::clock() {
 		break;
 	case 0xA9: // LDA #XX
 		LDA(IMM(mPC));
+		break;
+	case 0xCA: // DEX
+		DEX();
+		break;
+	case 0xD0: // BNE $XX
+		BNE(REL(mPC));
+		break;
+	case 0xE6: // INC $00XX
+		INC(ZERO_PAGE(mPC));
 		break;
 	default:
 		dump();
