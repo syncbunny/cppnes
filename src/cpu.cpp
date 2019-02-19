@@ -35,11 +35,13 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define INC(x) (_addr = (x), mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
 #define DEX() (UPDATE_NZ(--mX))
 #define DEY() (UPDATE_NZ(--mY))
+#define JMP(x) (mPC = (x))
 #define JSR(x) (PUSH2(mPC+1), mPC=(x))
 #define BPL(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
 #define BNE(x) (mPC = ((mP&FLG_Z)==0)? mPC+1:mPC+1+(signed char)(x))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEI() (SET_I())
+#define TAX() (mX = mA, UPDATE_NZ(mX))
 
 #define IMM(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -110,6 +112,9 @@ void CPU::clock() {
 	case 0x10: // BPL $XX
 		BPL(REL(mPC));
 	 	break;
+	case 0x4C: // JMP $XXXX
+		JMP(ABS());
+		break;
 	case 0x60: // RTS
 		RTS();
 		break;
@@ -142,6 +147,9 @@ void CPU::clock() {
 		break;
 	case 0xA9: // LDA #XX
 		LDA(IMM(mPC));
+		break;
+	case 0xAA: // TAX
+		TAX();
 		break;
 	case 0xCA: // DEX
 		DEX();
