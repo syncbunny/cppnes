@@ -13,6 +13,7 @@ public:
 	virtual void setPROM(uint8_t* addr, std::size_t size);
 	virtual void setCROM(uint8_t* addr, std::size_t size);
 	virtual void setPPU(class PPU* ppu);
+	virtual void setAPU(class APU* apu);
 	virtual void setNo(uint8_t no);
 	virtual void write1Byte(uint16_t addr, uint8_t val);
 	virtual void write2Bytes(uint16_t addr, uint16_t val);
@@ -27,6 +28,7 @@ protected:
 	uint8_t* mPROM;
 	uint8_t* mCROM;
 	class PPU* mPPU;
+	class APU* mAPU;
 };
 
 #endif

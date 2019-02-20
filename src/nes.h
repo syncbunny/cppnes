@@ -24,6 +24,7 @@ protected:
 	Mapper* mMapper;
 	CPU* mCPU;
 	PPU* mPPU;
+	APU* mAPU;
 	uint8_t* mWRAM;
 	unsigned char* mCartridgeMem;
 
