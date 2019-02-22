@@ -55,7 +55,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
 #define IMM(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
-#define ABS(x) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)))
+#define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
 #define ABS_IND(x, y) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
 #define REL(x) (mMapper->read1Byte(mPC))
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
