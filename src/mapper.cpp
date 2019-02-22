@@ -80,6 +80,10 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 
 	if (addr <= 0x07FF) {
 		ret = mWRAM[addr];
+	} else if (addr == 0x2000) {
+		ret = mPPU->getCR1();
+	} else if (addr == 0x2001) {
+		ret = mPPU->getCR1();
 	} else if (addr >= 0x8000) {
 		ret = mPROM[addr-0x8000];
 	} else {

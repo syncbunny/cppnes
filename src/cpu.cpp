@@ -48,13 +48,15 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BPL(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
 #define BNE(x) (mPC = ((mP&FLG_Z)==0)? mPC+1:mPC+1+(signed char)(x))
 #define BMI(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
+#define BCS(x) (mPC = ((mP&FLG_C)==0)? mPC+1:mPC+1+(signed char)(x))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEI() (SET_I())
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
 #define IMM(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
-#define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
+#define ABS(x) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)))
+#define ABS_IND(x, y) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
 #define REL(x) (mMapper->read1Byte(mPC))
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_IND(x,y) (mPC=mPC+1, mMapper->read1Byte(mPC-1)+(y))
@@ -128,7 +130,7 @@ void CPU::clock() {
 		break;
 	case 0x10: // BPL $XX
 		BPL(REL(mPC));
-	 	break;
+		break;
 	case 0x20: // JSR $XXXX
 		JSR(ABS(mPC));
 		break;
@@ -168,7 +170,7 @@ void CPU::clock() {
 	case 0xA2: // LDX #$XX
 		LDX(IMM(mPC));
 		break;
-	case 0xA8: // TAX
+	case 0xA8: // TAY
 		TAY();
 		break;
 	case 0xA9: // LDA #XX
@@ -177,8 +179,14 @@ void CPU::clock() {
 	case 0xAA: // TAX
 		TAX();
 		break;
+	case 0xB0: // BCS(Rel)
+		BCS(REL(mPC));
+		break;
 	case 0xB5: // LDA(ZeroPage, X)
 		LDA(ZERO_PAGE_IND(mPC, mX));
+		break;
+	case 0xB9: // LDA(Absplute, Y)
+		LDA(ABS_IND(mPC, mY));
 		break;
 	case 0xCA: // DEX
 		DEX();
@@ -188,6 +196,8 @@ void CPU::clock() {
 		break;
 	case 0xE6: // INC $00XX
 		INC(ZERO_PAGE(mPC));
+		break;
+	case 0xEA: // NOP
 		break;
 	default:
 		dump();

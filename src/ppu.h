@@ -15,6 +15,12 @@ public:
 	virtual void setCR2(uint8_t v) {
 		mCR2 = v;
 	}
+	virtual uint8_t getCR1() const {
+		return mCR1;
+	}
+	virtual uint8_t getCR2() const {
+		return mCR2;
+	}
 	virtual void clock();
 
 protected:
