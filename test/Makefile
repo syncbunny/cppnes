@@ -6,7 +6,7 @@ LIBS=
 
 SRCDIR=../src/
 TARGET=nes
-OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o ppu.o apu.o
+OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o testcpu.o ppu.o apu.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
@@ -23,6 +23,8 @@ vmapper.o: ${SRCDIR}vmapper.cpp ${SRCDIR}vmapper.h ${SRCDIR}mapper.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}vmapper.cpp
 cpu.o: ${SRCDIR}cpu.cpp ${SRCDIR}cpu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}cpu.cpp
+testcpu.o: testcpu.cpp testcpu.h ${SRCDIR}cpu.h
+	${CXX} ${CXXFLAGS} testcpu.cpp
 ppu.o: ${SRCDIR}ppu.cpp ${SRCDIR}ppu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}ppu.cpp
 apu.o: ${SRCDIR}apu.cpp ${SRCDIR}apu.h
