@@ -18,7 +18,7 @@
 
 NESForTest::NESForTest()
 :NES(){
-	mMapper = new VMapper();
+	mMapper = new Mapper();
 	mCPU = new CPU(mMapper);
 	mPPU = new PPU();
 	mAPU = new APU();
@@ -62,6 +62,7 @@ void NESForTest::test() {
 void NESForTest::cputest() {
 	cputest_LDA_IMM_1();
 	cputest_LDA_IMM_2();
+	cputest_STA_ABS_1();
 }
 
 void NESForTest::cputest_LDA_IMM_1() {
@@ -96,3 +97,18 @@ void NESForTest::cputest_LDA_IMM_2() {
 	check_eq("cputest_LDA_IMM_2: flag N", mTestCPU->flagN(), 1);
 }
 
+void NESForTest::cputest_STA_ABS_1() {
+	// Initialize
+	mPROM[0] = 0x8D;
+	mPROM[1] = 0x23;
+	mPROM[2] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->setA(0x56);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_STA_ABS_1: WRAM[0x0123]", mWRAM[0x0123], 0x56);
+	check_eq("cputest_STA_ABS_1: PC", mTestCPU->PC(), PROM_BASE_ADDR+3);
+}
