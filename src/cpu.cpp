@@ -25,9 +25,9 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
 
-#define UPDATE_Z(x) ( ((x)==0)? SET_Z():UNSET_Z() )
-#define UPDATE_N(x) ( ((x)&0x80)? SET_Z():UNSET_Z() )
-#define UPDATE_NZ(x) ( ((x)&0x80)? SET_N():((x)==0)? SET_Z():UNSET_NZ() )
+#define UPDATE_Z(x)  ( ((x)==0)? SET_Z():UNSET_Z() )
+#define UPDATE_N(x)  ( (((x)&0x80) != 0)? SET_N():UNSET_N() )
+#define UPDATE_NZ(x) (UPDATE_N(x), UPDATE_Z(x) )
 
 #define PUSH(x) (mMapper->write1Byte(0x0100+(mS--), (x)))
 #define PUSH2(x) (mMapper->push2Bytes(0x0100+mS, (x)), mS -= 2)
