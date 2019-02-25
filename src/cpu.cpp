@@ -50,6 +50,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BMI(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
 #define BCS(x) (mPC = ((mP&FLG_C)==0)? mPC+1:mPC+1+(signed char)(x))
 #define RTS() (mPC = POP2(), mPC+=1)
+#define SEC() (SET_C())
 #define SEI() (SET_I())
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
@@ -59,7 +60,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ABS_IND(x, y) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
 #define REL(x) (mMapper->read1Byte(mPC))
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
-#define ZERO_PAGE_IND(x,y) (mPC=mPC+1, mMapper->read1Byte(mPC-1)+(y))
+#define ZERO_PAGE_IND(x,y) (mPC=mPC+1, _addr = mMapper->read1Byte(mPC-1), _addr+=(y))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
@@ -137,6 +138,9 @@ void CPU::clock() {
 	case 0x30: // BMI $XX
 		BMI(REL(mPC));
 	 	break;
+	case 0x38: // SEC
+		SEC();
+		break;
 	case 0x48: // PHA
 		PHA();
 		break;
@@ -163,6 +167,9 @@ void CPU::clock() {
 		break;
 	case 0x91: // STA ($NN), Y
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		break;
+	case 0x95: // STA (ZEROPage, X)
+		STA(ZERO_PAGE_IND(mPC, mX));
 		break;
 	case 0xA0: // LDY #$XX
 		LDY(IMM(mPC));
