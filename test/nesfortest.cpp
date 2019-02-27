@@ -63,6 +63,7 @@ void NESForTest::cputest() {
 	cputest_LDA_IMM_1();
 	cputest_LDA_IMM_2();
 	cputest_STA_ABS_1();
+	cputest_JSR_ABS_1();
 }
 
 void NESForTest::cputest_LDA_IMM_1() {
@@ -111,4 +112,22 @@ void NESForTest::cputest_STA_ABS_1() {
 	// Exam
 	check_eq("cputest_STA_ABS_1: WRAM[0x0123]", mWRAM[0x0123], 0x56);
 	check_eq("cputest_STA_ABS_1: PC", mTestCPU->PC(), PROM_BASE_ADDR+3);
+}
+
+void NESForTest::cputest_JSR_ABS_1() {
+	// Initialize
+	mPROM[0] = 0x20; // 0x8000
+	mPROM[1] = 0x23; // 0x8001
+	mPROM[2] = 0x01; // 0x8002 
+	mTestCPU->testInit();
+	uint8_t s = mTestCPU->S();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_JSR_ABS_1: PC", mTestCPU->PC(), 0x0123);
+	check_eq("cputest_JSR_ABS_1: S", mTestCPU->S(), s-2);
+	check_eq("cputest_JSR_ABS_1: Stack", mWRAM[0x0100+s], 0x80);
+	check_eq("cputest_JSR_ABS_1: Stack-1", mWRAM[0x0100+s-1], 0x02);
 }
