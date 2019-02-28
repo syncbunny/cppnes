@@ -33,32 +33,32 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define PUSH2(x) (mMapper->push2Bytes(0x0100+mS, (x)), mS -= 2)
 #define POP2() (mS += 2, mMapper->pop2Bytes(0x0100+mS-2))
 
-#define LDA(x) ((mA = (x)), UPDATE_NZ(mA))
-#define LDX(x) ((mX = (x)), UPDATE_NZ(mX))
-#define LDY(x) ((mY = (x)), UPDATE_NZ(mY))
-#define STA(x) (mMapper->write1Byte((x), mA))
+#define LDA(addr) (mA = mMapper->read1Byte(addr), UPDATE_NZ(mA))
+#define LDX(addr) (mX = mMapper->read1Byte(addr), UPDATE_NZ(mX))
+#define LDY(addr) (mY = mMapper->read1Byte(addr), UPDATE_NZ(mY))
+#define STA(addr) (mMapper->write1Byte(addr, mA))
+#define INC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
+#define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
+#define JMP(addr) (mPC = addr)
+#define JSR(addr) (PUSH2(mPC+1), mPC=addr)
+#define BPL(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:(addr))
+#define BNE(addr) (mPC = ((mP&FLG_Z)==0)? mPC+1:addr)
+#define BMI(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
+#define BCS(addr) (mPC = ((mP&FLG_C)==0)? mPC+1:addr)
 #define PHA() (PUSH(mA))
-#define INC(x) (_addr = (x), mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
 #define DEX() (UPDATE_NZ(--mX))
 #define DEY() (UPDATE_NZ(--mY))
-#define ORA(x) (mA |= (x), UPDATE_NZ(mA))
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA<<=2))
-#define JMP(x) (mPC = (x))
-#define JSR(x) (PUSH2(mPC+1), mPC=(x))
-#define BPL(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
-#define BNE(x) (mPC = ((mP&FLG_Z)==0)? mPC+1:mPC+1+(signed char)(x))
-#define BMI(x) (mPC = ((mP&FLG_N)==0)? mPC+1:mPC+1+(signed char)(x))
-#define BCS(x) (mPC = ((mP&FLG_C)==0)? mPC+1:mPC+1+(signed char)(x))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEC() (SET_C())
 #define SEI() (SET_I())
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
-#define IMM(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
-#define ABS(x) (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
-#define ABS_IND(x, y) (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
-#define REL(x) (mMapper->read1Byte(mPC))
+#define IMM() (mPC++)
+#define ABS() (mPC=mPC+2, mPC-2)
+#define ABS_IND_Y() (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
+#define REL() (_mem=mMapper->read1Byte(mPC), mPC+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_IND(x,y) (mPC=mPC+1, _addr = mMapper->read1Byte(mPC-1), _addr+=(y))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
@@ -124,19 +124,19 @@ void CPU::clock() {
 	switch(o) {
 	// at this point, mPC is first byte of operand.
 	case 0x09: // ORA #XX
-		ORA(IMM(mPC));
+		ORA(IMM());
 		break;
 	case 0x0A: // ASL A
 		ASL_A();
 		break;
 	case 0x10: // BPL $XX
-		BPL(REL(mPC));
+		BPL(REL());
 		break;
 	case 0x20: // JSR $XXXX
-		JSR(ABS(mPC));
+		JSR(ABS());
 		break;
 	case 0x30: // BMI $XX
-		BMI(REL(mPC));
+		BMI(REL());
 	 	break;
 	case 0x38: // SEC
 		SEC();
@@ -154,7 +154,7 @@ void CPU::clock() {
 		STA(ZERO_PAGE(mPC));
 		break;
 	case 0xAD: // LDA $XXXX
-		LDA(ABS(mPC));
+		LDA(ABS());
 		break;
 	case 0x78: //SEI
 		SEI();
@@ -163,7 +163,7 @@ void CPU::clock() {
 		DEY();
 		break;
 	case 0x8D: // STA $XXXX
-		STA(ABS(mPC));
+		STA(ABS());
 		break;
 	case 0x91: // STA ($NN), Y
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
@@ -172,34 +172,41 @@ void CPU::clock() {
 		STA(ZERO_PAGE_IND(mPC, mX));
 		break;
 	case 0xA0: // LDY #$XX
-		LDY(IMM(mPC));
+		LDY(IMM());
 		break;
+#if 0
+	case 0xA1: // LDA (Indirect, X)
+		LDA(READ(INDIRECT(ZERO_PAGE_IND(mPC, mX))));
+		break;
+#endif
 	case 0xA2: // LDX #$XX
-		LDX(IMM(mPC));
+		LDX(IMM());
 		break;
 	case 0xA8: // TAY
 		TAY();
 		break;
 	case 0xA9: // LDA #XX
-		LDA(IMM(mPC));
+		LDA(IMM());
 		break;
 	case 0xAA: // TAX
 		TAX();
 		break;
 	case 0xB0: // BCS(Rel)
-		BCS(REL(mPC));
+		BCS(REL());
 		break;
 	case 0xB5: // LDA(ZeroPage, X)
 		LDA(ZERO_PAGE_IND(mPC, mX));
 		break;
+#if 0
 	case 0xB9: // LDA(Absplute, Y)
 		LDA(ABS_IND(mPC, mY));
 		break;
+#endif
 	case 0xCA: // DEX
 		DEX();
 		break;
 	case 0xD0: // BNE $XX
-		BNE(REL(mPC));
+		BNE(REL());
 		break;
 	case 0xE6: // INC $00XX
 		INC(ZERO_PAGE(mPC));
