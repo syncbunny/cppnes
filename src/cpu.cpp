@@ -56,7 +56,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
 #define IMM() (mPC++)
-#define ABS() (mPC=mPC+2, mPC-2)
+#define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
 #define ABS_IND_Y() (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
 #define REL() (_mem=mMapper->read1Byte(mPC), mPC+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
@@ -162,7 +162,7 @@ void CPU::clock() {
 	case 0x88: // DEY
 		DEY();
 		break;
-	case 0x8D: // STA $XXXX
+	case 0x8D: // STA (ABS)
 		STA(ABS());
 		break;
 	case 0x91: // STA ($NN), Y
