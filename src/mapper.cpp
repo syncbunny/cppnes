@@ -84,6 +84,8 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2001) {
 		ret = mPPU->getCR1();
+	} else if (addr == 0x2002) {
+		ret = mPPU->getSR();
 	} else if (addr >= 0x8000) {
 		ret = mPROM[addr-0x8000];
 	} else {
