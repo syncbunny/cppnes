@@ -58,6 +58,8 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mAPU->setDMC2(val);
 	} else if (addr == 0x4015) {
 		mAPU->setChCtrl(val);
+	} else if (addr == 0x4016) {
+		mPAD->out(val);
 	} else if (addr == 0x4017) {
 		mAPU->setFrameCounter(val);
 	} else {
@@ -97,6 +99,10 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2002) {
 		ret = mPPU->getSR();
+	} else if (addr == 0x4016) {
+		ret = mPAD->in1();
+	} else if (addr == 0x4017) {
+		ret = mPAD->in2();
 	} else if (addr >= 0x8000) {
 		ret = mPROM[addr-0x8000];
 	} else {
