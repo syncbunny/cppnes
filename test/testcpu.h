@@ -12,6 +12,12 @@ public:
 	uint8_t A() const {
 		return mA;
 	}
+	uint8_t X() const {
+		return mX;
+	}
+	uint8_t Y() const {
+		return mY;
+	}
 	uint8_t P() const {
 		return mP;
 	}
@@ -29,6 +35,12 @@ public:
 	}
 	void setA(uint8_t a) {
 		mA = a;
+	}
+	void setX(uint8_t x) {
+		mX = x;
+	}
+	void setY(uint8_t y) {
+		mY = y;
 	}
 public:
 	void testInit();

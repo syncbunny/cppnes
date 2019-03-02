@@ -18,6 +18,7 @@ protected:
 	void cputest_LDA_IMM_2();
 	void cputest_STA_ABS_1();
 	void cputest_JSR_ABS_1();
+	void cputest_DEY_1();
 
 protected:
 	uint8_t* mPROM;
