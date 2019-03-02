@@ -8,6 +8,7 @@
 #include "nes.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "vppu.h"
 #include "apu.h"
 #include "mapper.h"
 #include "vmapper.h"
@@ -26,7 +27,8 @@
 NES::NES() {
 	mMapper = new VMapper();
 	mCPU = new CPU(mMapper);
-	mPPU = new PPU();
+	//mPPU = new PPU();
+	mPPU = new VPPU();
 	mAPU = new APU();
 
 	mDClockCPU = 0;
