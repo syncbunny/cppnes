@@ -21,11 +21,17 @@ public:
 	virtual uint8_t getCR2() const {
 		return mCR2;
 	}
+	virtual uint8_t getSR() {
+		mScrollOffsetTarget = 0;
+		return mSR;
+	}
 	virtual void clock();
 
 protected:
-	uint8_t mCR1;
-	uint8_t mCR2;
+	uint8_t mCR1; // Control Register
+	uint8_t mCR2; // Control Register
+	uint8_t mSR;  // Status Register
+	uint8_t mScrollOffsetTarget;
 };
 
 #endif
