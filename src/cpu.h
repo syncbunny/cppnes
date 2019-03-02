@@ -18,6 +18,7 @@ public:
 protected:
 	void updateP(uint8_t n);
 	void doReset();
+	void buildSBC_VCTable();
 
 protected:
 	Mapper* mMapper;
@@ -30,6 +31,8 @@ protected:
 	int mClockRemain;
 
 	bool mResetFlag;
+
+	uint8_t mSBC_VCTable[256][256];
 };
 
 #endif
