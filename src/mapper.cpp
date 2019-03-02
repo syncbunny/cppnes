@@ -2,6 +2,7 @@
 #include "mapper.h"
 #include "ppu.h"
 #include "apu.h"
+#include "pad.h"
 
 Mapper::Mapper()
 :mNo(0){
@@ -28,6 +29,10 @@ void Mapper::setPPU(PPU* ppu) {
 
 void Mapper::setAPU(APU* apu) {
 	mAPU = apu;
+}
+
+void Mapper::setPAD(PAD* pad) {
+	mPAD = pad;
 }
 
 void Mapper::setNo(uint8_t no) {
