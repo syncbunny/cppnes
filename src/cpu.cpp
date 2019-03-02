@@ -45,7 +45,9 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define STA(addr) (mMapper->write1Byte(addr, mA))
 #define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
-#define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mP&=IFLG_VC, mP|=mSBC_VCTable[_a][_mem], UPDATE_NZ(mA))
+#define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a][_mem], UPDATE_NZ(mA))
+#define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a][_mem], UPDATE_NZ(mA))
+#define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
@@ -62,7 +64,9 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEC() (SET_C())
 #define SEI() (SET_I())
+#define CLC() (UNSET_C())
 #define CLI() (UNSET_I())
+#define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
@@ -101,6 +105,7 @@ CPU::CPU(Mapper* mapper)
 	mClockRemain = 0;
 	mResetFlag = false;
 
+	buildADC_VCTable();
 	buildSBC_VCTable();
 }
 
@@ -147,6 +152,9 @@ void CPU::clock() {
 	case 0x10: // BPL $XX
 		BPL(REL());
 		break;
+	case 0x18: // CLC
+		CLC();
+		break;
 	case 0x20: // JSR $XXXX
 		JSR(ABS());
 		break;
@@ -174,6 +182,9 @@ void CPU::clock() {
 	case 0x68: // PLA
 		PLA();
 		break;
+	case 0x69: // ADC (Imm)
+		ADC(IMM());
+		break;
 	case 0x85: // STA $ZZ
 		STA(ZERO_PAGE(mPC));
 		break;
@@ -195,6 +206,9 @@ void CPU::clock() {
 	case 0x95: // STA (ZEROPage, X)
 		STA(ZERO_PAGE_IND(mX));
 		break;
+	case 0x98: // TYA
+		TYA();
+		break;
 	case 0x99: // STA (Absolute X)
 		STA(ABS_IND(mX));
 		break;
@@ -206,6 +220,9 @@ void CPU::clock() {
 		break;
 	case 0xA2: // LDX #$XX
 		LDX(IMM());
+		break;
+	case 0xA5: // LDA (ZeroPage)
+		LDA(ZERO_PAGE(mPC));
 		break;
 	case 0xA8: // TAY
 		TAY();
@@ -219,14 +236,20 @@ void CPU::clock() {
 	case 0xB0: // BCS(Rel)
 		BCS(REL());
 		break;
+	case 0xB1: // LDA(Indirect Y), 
+		LDA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		break;
 	case 0xB5: // LDA(ZeroPage, X)
 		LDA(ZERO_PAGE_IND( mX));
 		break;
-	case 0xB9: // LDA(Absplute, Y)
+	case 0xB9: // LDA(Absolute, Y)
 		LDA(ABS_IND(mY));
 		break;
 	case 0xC8: // INY
 		INY();
+		break;
+	case 0xC9: // CMP (Imm)
+		CMP(IMM());
 		break;
 	case 0xCA: // DEX
 		DEX();
@@ -262,6 +285,23 @@ void CPU::doReset() {
 	SET_I();
 	mResetFlag = false;
 	mClockRemain = 6;
+}
+
+void CPU::buildADC_VCTable() {
+	for (int a = 0; a < 256; a++) {
+		for (int b = 0; b < 256; b++) {
+			mADC_VCTable[a][b] = 0;
+			if (a+b >= 256) {
+				mADC_VCTable[a][b] |= FLG_C;
+			}
+			uint8_t aa = a, bb = b;
+			uint8_t cc = a+b;
+
+			if ((aa <= 0x7F && cc >= 0x80) || (aa >= 0x80 && cc <= 0x7F)) {
+				mADC_VCTable[a][b] |= FLG_V;
+			}
+		}
+	}
 }
 
 void CPU::buildSBC_VCTable() {

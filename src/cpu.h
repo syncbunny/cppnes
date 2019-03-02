@@ -18,6 +18,7 @@ public:
 protected:
 	void updateP(uint8_t n);
 	void doReset();
+	void buildADC_VCTable();
 	void buildSBC_VCTable();
 
 protected:
@@ -32,6 +33,7 @@ protected:
 
 	bool mResetFlag;
 
+	uint8_t mADC_VCTable[256][256];
 	uint8_t mSBC_VCTable[256][256];
 };
 
