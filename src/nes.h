@@ -4,6 +4,7 @@
 #include "mapper.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "pad.h"
 
 class NES {
 public:
@@ -25,6 +26,7 @@ protected:
 	CPU* mCPU;
 	PPU* mPPU;
 	APU* mAPU;
+	PAD* mPAD;
 	uint8_t* mWRAM;
 	unsigned char* mCartridgeMem;
 
