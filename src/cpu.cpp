@@ -13,7 +13,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define FLG_V (0x40)
 #define FLG_N (0x80)
 #define IFLG_C (0xFE)
-#define IFLG_I (0xFD)
+#define IFLG_Z (0xFD)
+#define IFLG_I (0xFB)
 #define IFLG_V (0xBF)
 #define IFLG_N (0x7F)
 #define IFLG_NZ (0x7D)
@@ -24,7 +25,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define SET_Z() (mP |= FLG_Z)
 #define SET_N() (mP |= FLG_N)
 #define UNSET_C() (mP &= IFLG_C)
-#define UNSET_Z() (mP &= IFLG_I)
+#define UNSET_I() (mP &= IFLG_I)
+#define UNSET_Z() (mP &= IFLG_Z)
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
 
@@ -52,6 +54,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BCS(addr) (mPC = ((mP&FLG_C)==0)? mPC+1:addr)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
+#define INY() (mY++, UPDATE_NZ(mY))
 #define DEX() (mX--, UPDATE_NZ(mX))
 #define DEY() (mY--, UPDATE_NZ(mY))
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA<<=1))
@@ -59,6 +62,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEC() (SET_C())
 #define SEI() (SET_I())
+#define CLI() (UNSET_I())
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 
@@ -161,6 +165,9 @@ void CPU::clock() {
 	case 0x4C: // JMP $XXXX
 		JMP(ABS());
 		break;
+	case 0x58: // CLI
+		CLI();
+		break;
 	case 0x60: // RTS
 		RTS();
 		break;
@@ -188,6 +195,9 @@ void CPU::clock() {
 	case 0x95: // STA (ZEROPage, X)
 		STA(ZERO_PAGE_IND(mX));
 		break;
+	case 0x99: // STA (Absolute X)
+		STA(ABS_IND(mX));
+		break;
 	case 0xA0: // LDY #$XX
 		LDY(IMM());
 		break;
@@ -214,6 +224,9 @@ void CPU::clock() {
 		break;
 	case 0xB9: // LDA(Absplute, Y)
 		LDA(ABS_IND(mY));
+		break;
+	case 0xC8: // INY
+		INY();
 		break;
 	case 0xCA: // DEX
 		DEX();
