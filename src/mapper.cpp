@@ -2,6 +2,7 @@
 #include "mapper.h"
 #include "ppu.h"
 #include "apu.h"
+#include "pad.h"
 
 Mapper::Mapper()
 :mNo(0){
@@ -30,6 +31,10 @@ void Mapper::setAPU(APU* apu) {
 	mAPU = apu;
 }
 
+void Mapper::setPAD(PAD* pad) {
+	mPAD = pad;
+}
+
 void Mapper::setNo(uint8_t no) {
 	mNo = no;
 }
@@ -41,12 +46,20 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPPU->setCR1(val);
 	} else if (addr == 0x2001) {
 		mPPU->setCR2(val);
+	} else if (addr == 0x2005) {
+		mPPU->setScroll(val);
+	} else if (addr == 0x2006) {
+		mPPU->setWriteAddr(val);
+	} else if (addr == 0x2007) {
+		mPPU->write(val);
 	} else if (addr == 0x4010) {
 		mAPU->setDMC1(val);
 	} else if (addr == 0x4011) {
 		mAPU->setDMC2(val);
 	} else if (addr == 0x4015) {
 		mAPU->setChCtrl(val);
+	} else if (addr == 0x4016) {
+		mPAD->out(val);
 	} else if (addr == 0x4017) {
 		mAPU->setFrameCounter(val);
 	} else {
@@ -86,6 +99,10 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2002) {
 		ret = mPPU->getSR();
+	} else if (addr == 0x4016) {
+		ret = mPAD->in1();
+	} else if (addr == 0x4017) {
+		ret = mPAD->in2();
 	} else if (addr >= 0x8000) {
 		ret = mPROM[addr-0x8000];
 	} else {

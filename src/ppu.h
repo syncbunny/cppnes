@@ -25,6 +25,9 @@ public:
 		mScrollOffsetTarget = 0;
 		return mSR;
 	}
+	virtual void setScroll(uint8_t val);
+	virtual void setWriteAddr(uint8_t a);
+	virtual void write(uint8_t val);
 	virtual void clock();
 
 protected:
@@ -32,6 +35,10 @@ protected:
 	uint8_t mCR2; // Control Register
 	uint8_t mSR;  // Status Register
 	uint8_t mScrollOffsetTarget;
+	uint16_t mWriteAddr;
+	uint16_t mScrollVH; // Hi=V, Low=H
+
+	uint8_t* mMem;
 };
 
 #endif
