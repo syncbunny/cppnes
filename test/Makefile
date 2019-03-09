@@ -6,14 +6,14 @@ LIBS=
 
 SRCDIR=../src/
 TARGET=nes
-OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o testcpu.o ppu.o apu.o
+OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o testcpu.o ppu.o vppu.o apu.o pad.o vpad.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
 
 main.o:main.cpp ${SRCDIR}cpu.h ${SRCDIR}nes.h ${SRCDIR}ppu.h ${SRCDIR}apu.h ${SRCDIR}mapper.h 
 	${CXX} ${CXXFLAGS} main.cpp
-nes.o: ${SRCDIR}nes.cpp ${SRCDIR}nes.h ${SRCDIR}cpu.h ${SRCDIR}ppu.h ${SRCDIR}mapper.h ${SRCDIR}vmapper.h
+nes.o: ${SRCDIR}nes.cpp ${SRCDIR}nes.h ${SRCDIR}cpu.h ${SRCDIR}ppu.h ${SRCDIR}mapper.h ${SRCDIR}vmapper.h ${SRCDIR}pad.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}nes.cpp
 nesfortest.o: nesfortest.cpp nesfortest.h ${SRCDIR}nes.h ${SRCDIR}cpu.h ${SRCDIR}ppu.h ${SRCDIR}mapper.h ${SRCDIR}vmapper.h
 	${CXX} ${CXXFLAGS} nesfortest.cpp
@@ -27,8 +27,14 @@ testcpu.o: testcpu.cpp testcpu.h ${SRCDIR}cpu.h
 	${CXX} ${CXXFLAGS} testcpu.cpp
 ppu.o: ${SRCDIR}ppu.cpp ${SRCDIR}ppu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}ppu.cpp
+vppu.o: ${SRCDIR}vppu.cpp ${SRCDIR}vppu.h ${SRCDIR}ppu.h
+	${CXX} ${CXXFLAGS} ${SRCDIR}vppu.cpp
 apu.o: ${SRCDIR}apu.cpp ${SRCDIR}apu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}apu.cpp
+pad.o: ${SRCDIR}pad.cpp ${SRCDIR}pad.h
+	${CXX} ${CXXFLAGS} ${SRCDIR}pad.cpp
+vpad.o: ${SRCDIR}vpad.cpp ${SRCDIR}vpad.h ${SRCDIR}pad.h
+	${CXX} ${CXXFLAGS} ${SRCDIR}vpad.cpp
 
 clean:
 	-rm -f ${TARGET} ${OBJS}
