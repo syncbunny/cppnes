@@ -6,7 +6,7 @@ LIBS=
 
 SRCDIR=../src/
 TARGET=nes
-OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o testcpu.o ppu.o vppu.o apu.o pad.o vpad.o
+OBJS=main.o nes.o nesfortest.o mapper.o vmapper.o cpu.o testcpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
@@ -35,6 +35,8 @@ pad.o: ${SRCDIR}pad.cpp ${SRCDIR}pad.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}pad.cpp
 vpad.o: ${SRCDIR}vpad.cpp ${SRCDIR}vpad.h ${SRCDIR}pad.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}vpad.cpp
+events.o: ${SRCDIR}events.cpp ${SRCDIR}events.h
+	${CXX} ${CXXFLAGS} ${SRCDIR}events.cpp
 
 clean:
 	-rm -f ${TARGET} ${OBJS}
