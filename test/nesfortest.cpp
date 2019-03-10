@@ -67,6 +67,21 @@ void NESForTest::cputest() {
 	cputest_DEY_1();
 	cputest_ROR_ZP_1();
 	cputest_ROR_ZP_2();
+	cputest_BPL_1();
+	cputest_BPL_2();
+	cputest_BPL_3();
+	cputest_BNE_1();
+	cputest_BNE_2();
+	cputest_BNE_3();
+	cputest_BEQ_1();
+	cputest_BEQ_2();
+	cputest_BEQ_3();
+	cputest_BMI_1();
+	cputest_BMI_2();
+	cputest_BMI_3();
+	cputest_BCS_1();
+	cputest_BCS_2();
+	cputest_BCS_3();
 }
 
 void NESForTest::cputest_LDA_IMM_1() {
@@ -188,4 +203,214 @@ void NESForTest::cputest_ROR_ZP_2() {
 	check_eq("cputest_ROR_ZP_2: flag Z", mTestCPU->flagZ(), 0);
 	check_eq("cputest_ROR_ZP_2: flag N", mTestCPU->flagN(), 1);
 	check_eq("cputest_ROR_ZP_2: flag C", mTestCPU->flagC(), 1);
+}
+
+void NESForTest::cputest_BPL_1() {
+	// Initialize
+	mPROM[0] = 0x10;
+	mPROM[1] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BPL_1: PC", mTestCPU->PC(), 0x8003);
+}
+
+void NESForTest::cputest_BPL_2() {
+	// Initialize
+	mPROM[0] = 0x10;
+	mPROM[1] = 0xFE;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BPL_2: PC", mTestCPU->PC(), 0x8000);
+}
+
+void NESForTest::cputest_BPL_3() {
+	// Initialize
+	mPROM[0] = 0x10;
+	mPROM[1] = 0xFF;
+	mTestCPU->testInit();
+	mTestCPU->setFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BPL_3: PC", mTestCPU->PC(), 0x8002);
+}
+
+void NESForTest::cputest_BNE_1() {
+	// Initialize
+	mPROM[0] = 0xD0;
+	mPROM[1] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BNE_1: PC", mTestCPU->PC(), 0x8003);
+}
+
+void NESForTest::cputest_BNE_2() {
+	// Initialize
+	mPROM[0] = 0xD0;
+	mPROM[1] = 0xFE;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BNE_2: PC", mTestCPU->PC(), 0x8000);
+}
+
+void NESForTest::cputest_BNE_3() {
+	// Initialize
+	mPROM[0] = 0xD0;
+	mPROM[1] = 0xFF;
+	mTestCPU->testInit();
+	mTestCPU->setFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BNE_3: PC", mTestCPU->PC(), 0x8002);
+}
+
+void NESForTest::cputest_BEQ_1() {
+	// Initialize
+	mPROM[0] = 0xF0;
+	mPROM[1] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->setFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BEQ_1: PC", mTestCPU->PC(), 0x8003);
+}
+
+void NESForTest::cputest_BEQ_2() {
+	// Initialize
+	mPROM[0] = 0xF0;
+	mPROM[1] = 0xFE;
+	mTestCPU->testInit();
+	mTestCPU->setFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BEQ_2: PC", mTestCPU->PC(), 0x8000);
+}
+
+void NESForTest::cputest_BEQ_3() {
+	// Initialize
+	mPROM[0] = 0xF0;
+	mPROM[1] = 0xFF;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagZ();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BEQ_3: PC", mTestCPU->PC(), 0x8002);
+}
+
+void NESForTest::cputest_BMI_1() {
+	// Initialize
+	mPROM[0] = 0x30;
+	mPROM[1] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->setFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BMI_1: PC", mTestCPU->PC(), 0x8003);
+}
+
+void NESForTest::cputest_BMI_2() {
+	// Initialize
+	mPROM[0] = 0x30;
+	mPROM[1] = 0xFE;
+	mTestCPU->testInit();
+	mTestCPU->setFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BMI_2: PC", mTestCPU->PC(), 0x8000);
+}
+
+void NESForTest::cputest_BMI_3() {
+	// Initialize
+	mPROM[0] = 0x30;
+	mPROM[1] = 0xFF;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagN();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BMI_3: PC", mTestCPU->PC(), 0x8002);
+}
+
+void NESForTest::cputest_BCS_1() {
+	// Initialize
+	mPROM[0] = 0xB0;
+	mPROM[1] = 0x01;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BCS_1: PC", mTestCPU->PC(), 0x8003);
+}
+
+void NESForTest::cputest_BCS_2() {
+	// Initialize
+	mPROM[0] = 0xB0;
+	mPROM[1] = 0xFE;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BCS_2: PC", mTestCPU->PC(), 0x8000);
+}
+
+void NESForTest::cputest_BCS_3() {
+	// Initialize
+	mPROM[0] = 0xB0;
+	mPROM[1] = 0xFF;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_BCS_3: PC", mTestCPU->PC(), 0x8002);
 }

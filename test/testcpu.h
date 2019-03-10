@@ -51,8 +51,20 @@ public:
 	void setFlagC() {
 		mP |= 0x01;
 	}
-	void unsetFlagC() {
+	void clearFlagC() {
 		mP &= 0xFE;
+	}
+	void setFlagN() {
+		mP |= 0x80;
+	}
+	void clearFlagN() {
+		mP &= 0x7F;
+	}
+	void setFlagZ() {
+		mP |= 0x02;
+	}
+	void clearFlagZ() {
+		mP &= 0xFD;
 	}
 public:
 	void testInit();
