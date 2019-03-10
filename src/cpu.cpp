@@ -59,8 +59,10 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define INY() (mY++, UPDATE_NZ(mY))
 #define DEX() (mX--, UPDATE_NZ(mX))
 #define DEY() (mY--, UPDATE_NZ(mY))
-#define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA<<=1))
+#define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), mA<<=1,UPDATE_NZ(mA))
+#define LSR_A() ((mA&0x01)? SET_C():UNSET_C(), mA>>=1,UPDATE_NZ(mA))
 #define ROL_A() (_a=mA, mA<<=1, mA|=(mP&FLG_C)? 0x01:0x00, (_a&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA))
+#define ROR(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem>>=1, _mem!=(mP&FLG_C)? 0x80:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x01)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEC() (SET_C())
 #define SEI() (SET_I())
@@ -137,12 +139,17 @@ void CPU::clock() {
 	// temporary variables
 	uint8_t _a;
 	uint8_t _mem;
+	uint8_t _mem2;
 	uint8_t _zpaddr;
+	uint16_t _addr;
 
 	// read opcode and exam it.
 	uint8_t o = mMapper->read1Byte(mPC++);
 	switch(o) {
 	// at this point, mPC is first byte of operand.
+	case 0x05: // ORA (ZeroPage)
+		ORA(ZERO_PAGE(mPC));
+		break;
 	case 0x09: // ORA #XX
 		ORA(IMM());
 		break;
@@ -170,6 +177,9 @@ void CPU::clock() {
 	case 0x48: // PHA
 		PHA();
 		break;
+	case 0x4A: // LSR A
+		LSR_A();
+		break;
 	case 0x4C: // JMP $XXXX
 		JMP(ABS());
 		break;
@@ -178,6 +188,9 @@ void CPU::clock() {
 		break;
 	case 0x60: // RTS
 		RTS();
+		break;
+	case 0x66: // ROR (ZeroPage)
+		ROR(ZERO_PAGE(mPC));
 		break;
 	case 0x68: // PLA
 		PLA();
