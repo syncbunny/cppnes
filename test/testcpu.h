@@ -33,6 +33,9 @@ public:
 	uint8_t flagN() const {
 		return ((mP&0x80) != 0)? 1:0;
 	}
+	uint8_t flagC() const {
+		return ((mP&0x01) != 0)? 1:0;
+	}
 	void setA(uint8_t a) {
 		mA = a;
 	}
@@ -41,6 +44,15 @@ public:
 	}
 	void setY(uint8_t y) {
 		mY = y;
+	}
+	void setP(uint8_t p) {
+		mP = p;
+	}
+	void setFlagC() {
+		mP |= 0x01;
+	}
+	void unsetFlagC() {
+		mP &= 0xFE;
 	}
 public:
 	void testInit();

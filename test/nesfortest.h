@@ -19,6 +19,8 @@ protected:
 	void cputest_STA_ABS_1();
 	void cputest_JSR_ABS_1();
 	void cputest_DEY_1();
+	void cputest_ROR_ZP_1();
+	void cputest_ROR_ZP_2();
 
 protected:
 	uint8_t* mPROM;

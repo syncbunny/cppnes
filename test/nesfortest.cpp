@@ -65,6 +65,8 @@ void NESForTest::cputest() {
 	cputest_STA_ABS_1();
 	cputest_JSR_ABS_1();
 	cputest_DEY_1();
+	cputest_ROR_ZP_1();
+	cputest_ROR_ZP_2();
 }
 
 void NESForTest::cputest_LDA_IMM_1() {
@@ -147,4 +149,43 @@ void NESForTest::cputest_DEY_1() {
 	check_eq("cputest_DEY_1: Y", mTestCPU->Y(), 0x00);
 	check_eq("cputest_DEY_1: flag Z", mTestCPU->flagZ(), 1);
 	check_eq("cputest_DEY_1: flag N", mTestCPU->flagN(), 0);
+}
+
+void NESForTest::cputest_ROR_ZP_1() {
+	// Initialize
+	mPROM[0] = 0x66;
+	mPROM[1] = 0x00;
+	mWRAM[0] = 0x22;
+	mTestCPU->testInit();
+	mTestCPU->setP(0);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ROR_ZP_1: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_ROR_ZP_1: WRAM[0]", mWRAM[0], 0x11);
+	check_eq("cputest_ROR_ZP_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ROR_ZP_1: flag N", mTestCPU->flagN(), 0);
+	check_eq("cputest_ROR_ZP_1: flag C", mTestCPU->flagC(), 0);
+}
+
+void NESForTest::cputest_ROR_ZP_2() {
+	// Initialize
+	mPROM[0] = 0x66;
+	mPROM[1] = 0x00;
+	mWRAM[0] = 0x11;
+	mTestCPU->testInit();
+	mTestCPU->setP(0);
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ROR_ZP_2: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_ROR_ZP_2: WRAM[0]", mWRAM[0], 0x88);
+	check_eq("cputest_ROR_ZP_2: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ROR_ZP_2: flag N", mTestCPU->flagN(), 1);
+	check_eq("cputest_ROR_ZP_2: flag C", mTestCPU->flagC(), 1);
 }
