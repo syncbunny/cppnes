@@ -44,6 +44,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define LDY(addr) (mY = mMapper->read1Byte(addr), UPDATE_NZ(mY))
 #define STA(addr) (mMapper->write1Byte(addr, mA))
 #define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
+#define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a][_mem], UPDATE_NZ(mA))
 #define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a][_mem], UPDATE_NZ(mA))
@@ -52,6 +53,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
 #define BNE(addr) (mPC = ((mP&FLG_Z)==0)? mPC+1:addr)
+#define BEQ(addr) (mPC = ((mP&FLG_Z)==0)? addr:mPC+1)
 #define BMI(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
 #define BCS(addr) (mPC = ((mP&FLG_C)==0)? mPC+1:addr)
 #define PHA() (PUSH(mA))
@@ -165,6 +167,9 @@ void CPU::clock() {
 	case 0x20: // JSR $XXXX
 		JSR(ABS());
 		break;
+	case 0x29: // AND (Imm)
+		AND(IMM());
+		break;
 	case 0x2A: // ROL_A
 		ROL_A();
 		break;
@@ -274,6 +279,9 @@ void CPU::clock() {
 		INC(ZERO_PAGE(mPC));
 		break;
 	case 0xEA: // NOP
+		break;
+	case 0xF0: // BEQ (Rel)
+		BEQ(REL());
 		break;
 	case 0xFD: // SBC (ABS_IND(X))
 		SBC(ABS_IND(mX));
