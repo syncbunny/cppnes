@@ -10,23 +10,27 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define FLG_C (0x01)
 #define FLG_Z (0x02)
 #define FLG_I (0x04)
+#define FLG_B (0x10)
 #define FLG_V (0x40)
 #define FLG_N (0x80)
 #define IFLG_C (0xFE)
 #define IFLG_Z (0xFD)
 #define IFLG_I (0xFB)
+#define IFLG_B (0xEF)
 #define IFLG_V (0xBF)
 #define IFLG_N (0x7F)
 #define IFLG_NZ (0x7D)
 #define IFLG_VC (0xBE)
 
-#define SET_C() (mP != FLG_C)
+#define SET_C() (mP |= FLG_C)
 #define SET_I() (mP |= FLG_I)
 #define SET_Z() (mP |= FLG_Z)
+#define SET_B() (mP |= FLG_B)
 #define SET_N() (mP |= FLG_N)
 #define UNSET_C() (mP &= IFLG_C)
 #define UNSET_I() (mP &= IFLG_I)
 #define UNSET_Z() (mP &= IFLG_Z)
+#define CLEAR_B() (mP &= IFLG_B)
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
 
@@ -108,6 +112,7 @@ CPU::CPU(Mapper* mapper)
 :mMapper(mapper){
 	mClockRemain = 0;
 	mResetFlag = false;
+	mNMIFlag = false;
 
 	buildADC_VCTable();
 	buildSBC_VCTable();
@@ -122,12 +127,21 @@ void CPU::powerOn() {
 	mS = 0xFD;
 }
 
+void CPU::nmi() {
+	mNMIFlag = true;
+	mClockRemain = 6;
+}
+
 void CPU::reset() {
 	mResetFlag = true;
 	mClockRemain = 6;
 }
 
 void CPU::clock() {
+	if (mNMIFlag) {
+		doNMI();
+		return;
+	}
 	if (mResetFlag) {
 		doReset();
 		return;
@@ -305,6 +319,14 @@ void CPU::doReset() {
 	mPC = mMapper->read2Bytes(RESET_VECTOR);
 	SET_I();
 	mResetFlag = false;
+	mClockRemain = 6;
+}
+
+void CPU::doNMI() {
+	mPC = mMapper->read2Bytes(NMI_VECTOR);
+	SET_I();
+	CLEAR_B();
+	mNMIFlag = false;
 	mClockRemain = 6;
 }
 

@@ -5,7 +5,7 @@ LDFLAGS=
 LIBS=
 
 TARGET=nes
-OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o
+OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
@@ -20,7 +20,7 @@ vmapper.o: vmapper.cpp vmapper.h mapper.h
 	${CXX} ${CXXFLAGS} vmapper.cpp
 cpu.o: cpu.cpp cpu.h
 	${CXX} ${CXXFLAGS} cpu.cpp
-ppu.o: ppu.cpp ppu.h
+ppu.o: ppu.cpp ppu.h events.h
 	${CXX} ${CXXFLAGS} ppu.cpp
 vppu.o: vppu.cpp vppu.h ppu.h
 	${CXX} ${CXXFLAGS} vppu.cpp
@@ -30,6 +30,8 @@ pad.o: pad.cpp pad.h
 	${CXX} ${CXXFLAGS} pad.cpp
 vpad.o: vpad.cpp vpad.h pad.h
 	${CXX} ${CXXFLAGS} vpad.cpp
+events.o: events.cpp events.h
+	${CXX} ${CXXFLAGS} events.cpp
 
 clean:
 	-rm -f ${TARGET} ${OBJS}
