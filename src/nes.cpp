@@ -14,6 +14,7 @@
 #include "vpad.h"
 #include "mapper.h"
 #include "vmapper.h"
+#include "events.h"
 
 #define FLAG6_V_MIRROR           (0x01)
 #define FLAG6_HAS_BATTARY_BACKUP (0x02)
@@ -114,6 +115,16 @@ void NES::reset() {
 void NES::clock() {
 	//       Master          CPU      PPU
 	// NTSC: 21477272.72 Hz  Base/12  Base/4
+
+	Event* evt = EventQueue::getInstance().pop();
+	if (evt) {
+		switch(evt->getType()) {
+		case Event::TYPE_NMI:
+			printf("NES::clock: NMI!\n");
+			mCPU->nmi();
+			break;
+		}
+	}
 
 	if (mDClockCPU == 0) {
 		mCPU->clock();

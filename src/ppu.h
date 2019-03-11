@@ -21,14 +21,14 @@ public:
 	virtual uint8_t getCR2() const {
 		return mCR2;
 	}
-	virtual uint8_t getSR() {
-		mScrollOffsetTarget = 0;
-		return mSR;
-	}
+	virtual uint8_t getSR();
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
 	virtual void write(uint8_t val);
 	virtual void clock();
+
+protected:
+	virtual void startVR();
 
 protected:
 	uint8_t mCR1; // Control Register
@@ -37,6 +37,9 @@ protected:
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
 	uint16_t mScrollVH; // Hi=V, Low=H
+	uint16_t mLine;
+	uint16_t mLineClock;
+	uint32_t mFrames;
 
 	uint8_t* mMem;
 };

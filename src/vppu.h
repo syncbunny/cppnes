@@ -10,6 +10,10 @@ public:
 
 public:
 	virtual void write(uint8_t val);
+	virtual uint8_t getSR();
+
+protected:
+	virtual void startVR();
 };
 
 #endif

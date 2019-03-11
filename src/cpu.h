@@ -12,12 +12,14 @@ public:
 public:
 	void powerOn();
 	void reset();
+	void nmi();
 	void clock();
 	void dump();
 
 protected:
 	void updateP(uint8_t n);
 	void doReset();
+	void doNMI();
 	void buildADC_VCTable();
 	void buildSBC_VCTable();
 
@@ -32,6 +34,7 @@ protected:
 	int mClockRemain;
 
 	bool mResetFlag;
+	bool mNMIFlag;
 
 	uint8_t mADC_VCTable[256][256];
 	uint8_t mSBC_VCTable[256][256];

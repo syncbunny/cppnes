@@ -10,23 +10,27 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define FLG_C (0x01)
 #define FLG_Z (0x02)
 #define FLG_I (0x04)
+#define FLG_B (0x10)
 #define FLG_V (0x40)
 #define FLG_N (0x80)
 #define IFLG_C (0xFE)
 #define IFLG_Z (0xFD)
 #define IFLG_I (0xFB)
+#define IFLG_B (0xEF)
 #define IFLG_V (0xBF)
 #define IFLG_N (0x7F)
 #define IFLG_NZ (0x7D)
 #define IFLG_VC (0xBE)
 
-#define SET_C() (mP != FLG_C)
+#define SET_C() (mP |= FLG_C)
 #define SET_I() (mP |= FLG_I)
 #define SET_Z() (mP |= FLG_Z)
+#define SET_B() (mP |= FLG_B)
 #define SET_N() (mP |= FLG_N)
 #define UNSET_C() (mP &= IFLG_C)
 #define UNSET_I() (mP &= IFLG_I)
 #define UNSET_Z() (mP &= IFLG_Z)
+#define CLEAR_B() (mP &= IFLG_B)
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
 
@@ -56,6 +60,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BEQ(addr) (mPC = ((mP&FLG_Z)!=0)? addr:mPC+1)
 #define BMI(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
 #define BCS(addr) (mPC = ((mP&FLG_C)==0)? mPC+1:addr)
+#define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
 #define INY() (mY++, UPDATE_NZ(mY))
@@ -64,6 +69,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), mA<<=1,UPDATE_NZ(mA))
 #define LSR_A() ((mA&0x01)? SET_C():UNSET_C(), mA>>=1,UPDATE_NZ(mA))
 #define ROL_A() (_a=mA, mA<<=1, mA|=(mP&FLG_C)? 0x01:0x00, (_a&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA))
+#define ROR_A() (_a=mA, mA>>=1, mA|=(mP&FLG_C)? 0x80:0x00, (_a&0x01)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROR(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem>>=1, _mem|=(mP&FLG_C)? 0x80:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x01)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define SEC() (SET_C())
@@ -108,6 +114,7 @@ CPU::CPU(Mapper* mapper)
 :mMapper(mapper){
 	mClockRemain = 0;
 	mResetFlag = false;
+	mNMIFlag = false;
 
 	buildADC_VCTable();
 	buildSBC_VCTable();
@@ -122,12 +129,21 @@ void CPU::powerOn() {
 	mS = 0xFD;
 }
 
+void CPU::nmi() {
+	mNMIFlag = true;
+	mClockRemain = 6;
+}
+
 void CPU::reset() {
 	mResetFlag = true;
 	mClockRemain = 6;
 }
 
 void CPU::clock() {
+	if (mNMIFlag) {
+		doNMI();
+		return;
+	}
 	if (mResetFlag) {
 		doReset();
 		return;
@@ -163,6 +179,9 @@ void CPU::clock() {
 		break;
 	case 0x18: // CLC
 		CLC();
+		break;
+	case 0x1D: // ORA (ABS_X)
+		ORA(ABS_IND(mX));
 		break;
 	case 0x20: // JSR $XXXX
 		JSR(ABS());
@@ -203,8 +222,14 @@ void CPU::clock() {
 	case 0x69: // ADC (Imm)
 		ADC(IMM());
 		break;
+	case 0x6A: // ROR_A
+		ROR_A();
+		break;
 	case 0x85: // STA $ZZ
 		STA(ZERO_PAGE(mPC));
+		break;
+	case 0x9D: // STA (ABS_X)
+		STA(ABS_IND(mX));
 		break;
 	case 0xAD: // LDA $XXXX
 		LDA(ABS());
@@ -217,6 +242,9 @@ void CPU::clock() {
 		break;
 	case 0x8D: // STA (ABS)
 		STA(ABS());
+		break;
+	case 0x90: // BCC (Rel)
+		BCC(REL());
 		break;
 	case 0x91: // STA ($NN), Y
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
@@ -305,6 +333,14 @@ void CPU::doReset() {
 	mPC = mMapper->read2Bytes(RESET_VECTOR);
 	SET_I();
 	mResetFlag = false;
+	mClockRemain = 6;
+}
+
+void CPU::doNMI() {
+	mPC = mMapper->read2Bytes(NMI_VECTOR);
+	SET_I();
+	CLEAR_B();
+	mNMIFlag = false;
 	mClockRemain = 6;
 }
 
