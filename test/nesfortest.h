@@ -16,7 +16,9 @@ protected:
 	void cputest();
 	void cputest_LDA_IMM_1();
 	void cputest_LDA_IMM_2();
+	void cputest_LDA_ABS_1();
 	void cputest_STA_ABS_1();
+	void cputest_STA_ABS_X_1();
 	void cputest_JSR_ABS_1();
 	void cputest_DEY_1();
 	void cputest_ROR_ZP_1();
@@ -36,6 +38,9 @@ protected:
 	void cputest_BCS_1();
 	void cputest_BCS_2();
 	void cputest_BCS_3();
+	void cputest_BCC_1();
+	void cputest_BCC_2();
+	void cputest_BCC_3();
 
 protected:
 	uint8_t* mPROM;
