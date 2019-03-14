@@ -32,6 +32,7 @@ protected:
 
 	int mDClockCPU;
 	int mDClockPPU;
+	int mDMAWait;
 };
 
 #endif

@@ -24,6 +24,9 @@ public:
 	virtual uint16_t pop2Bytes(uint16_t addr);
 
 protected:
+	virtual void startDMA(uint8_t val);
+
+protected:
 	uint8_t mNo;
 	uint8_t* mWRAM;
 	uint8_t* mPROM;

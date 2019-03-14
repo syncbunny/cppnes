@@ -123,7 +123,11 @@ void NES::clock() {
 			printf("NES::clock: NMI!\n");
 			mCPU->nmi();
 			break;
+		case Event::TYPE_DMA:
+			mDClockCPU = 514*12; // Stop CPU 514 clocks
+			break;
 		}
+		delete evt;
 	}
 
 	if (mDClockCPU == 0) {

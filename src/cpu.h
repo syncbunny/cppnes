@@ -14,6 +14,7 @@ public:
 	void reset();
 	void nmi();
 	void clock();
+	void startDMA();
 	void dump();
 
 protected:

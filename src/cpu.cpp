@@ -344,6 +344,10 @@ void CPU::doNMI() {
 	mClockRemain = 6;
 }
 
+void CPU::startDMA() {
+	mClockRemain = 514;
+}
+
 void CPU::buildADC_VCTable() {
 	for (int a = 0; a < 256; a++) {
 		for (int b = 0; b < 256; b++) {
@@ -377,3 +381,4 @@ void CPU::buildSBC_VCTable() {
 		}
 	}
 }
+
