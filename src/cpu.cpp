@@ -47,12 +47,14 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define LDX(addr) (mX = mMapper->read1Byte(addr), UPDATE_NZ(mX))
 #define LDY(addr) (mY = mMapper->read1Byte(addr), UPDATE_NZ(mY))
 #define STA(addr) (mMapper->write1Byte(addr, mA))
+#define STY(addr) (mMapper->write1Byte(addr, mY))
 #define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a][_mem], UPDATE_NZ(mA))
 #define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a][_mem], UPDATE_NZ(mA))
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
+#define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
@@ -63,6 +65,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
+#define INX() (mX++, UPDATE_NZ(mX))
 #define INY() (mY++, UPDATE_NZ(mY))
 #define DEX() (mX--, UPDATE_NZ(mX))
 #define DEY() (mY--, UPDATE_NZ(mY))
@@ -72,6 +75,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ROR_A() (_a=mA, mA>>=1, mA|=(mP&FLG_C)? 0x80:0x00, (_a&0x01)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROR(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem>>=1, _mem|=(mP&FLG_C)? 0x80:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x01)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
 #define RTS() (mPC = POP2(), mPC+=1)
+#define RTI() (mP = POP(), mPC = POP2())
 #define SEC() (SET_C())
 #define SEI() (SET_I())
 #define CLC() (UNSET_C())
@@ -155,7 +159,7 @@ void CPU::clock() {
 	}
 
 	// temporary variables
-	uint8_t _a;
+	uint8_t _a, _x, _y;
 	uint8_t _mem;
 	uint8_t _mem2;
 	uint8_t _zpaddr;
@@ -198,6 +202,9 @@ void CPU::clock() {
 	case 0x38: // SEC
 		SEC();
 		break;
+	case 0x40: // RTI
+		RTI();
+		break;
 	case 0x48: // PHA
 		PHA();
 		break;
@@ -224,6 +231,9 @@ void CPU::clock() {
 		break;
 	case 0x6A: // ROR_A
 		ROR_A();
+		break;
+	case 0x84: // STY (ZeroPage)
+		STY(ZERO_PAGE(mPC));
 		break;
 	case 0x85: // STA $ZZ
 		STA(ZERO_PAGE(mPC));
@@ -291,6 +301,9 @@ void CPU::clock() {
 	case 0xB9: // LDA(Absolute, Y)
 		LDA(ABS_IND(mY));
 		break;
+	case 0xC0: // CPY (Imm)
+		CPY(IMM());
+		break;
 	case 0xC8: // INY
 		INY();
 		break;
@@ -306,7 +319,13 @@ void CPU::clock() {
 	case 0xE6: // INC $00XX
 		INC(ZERO_PAGE(mPC));
 		break;
+	case 0xE8: // INX
+		INX();
+		break;
 	case 0xEA: // NOP
+		break;
+	case 0xE9: // SBC (Imm)
+		SBC(IMM());
 		break;
 	case 0xF0: // BEQ (Rel)
 		BEQ(REL());
@@ -337,9 +356,13 @@ void CPU::doReset() {
 }
 
 void CPU::doNMI() {
-	mPC = mMapper->read2Bytes(NMI_VECTOR);
-	SET_I();
 	CLEAR_B();
+	PUSH(mPC >> 8);
+	PUSH(mPC&0xFF);
+	PUSH(mP);
+	SET_I();
+	mPC = mMapper->read2Bytes(NMI_VECTOR);
+
 	mNMIFlag = false;
 	mClockRemain = 6;
 }
