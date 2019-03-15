@@ -30,7 +30,8 @@ protected:
 class Event {
 public:
 	enum {
-		TYPE_NMI
+		TYPE_NMI,
+		TYPE_DMA,
 	};
 protected:
 	Event(uint16_t type)
@@ -53,6 +54,16 @@ public:
 	EventNMI()
         :Event(TYPE_NMI) {
 	}
+};
+
+class EventDMA: public Event {
+public:
+	EventDMA(uint16_t startAddr)
+	:Event(TYPE_DMA), mStartAddr(startAddr) {
+	}
+
+protected:
+	uint16_t mStartAddr;
 };
 
 #endif

@@ -1,5 +1,7 @@
+#include <cstring>
 #include <stdexcept>
 #include "mapper.h"
+#include "events.h"
 #include "ppu.h"
 #include "apu.h"
 #include "pad.h"
@@ -56,6 +58,8 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mAPU->setDMC1(val);
 	} else if (addr == 0x4011) {
 		mAPU->setDMC2(val);
+	} else if (addr == 0x4014) {
+		this->startDMA(val);
 	} else if (addr == 0x4015) {
 		mAPU->setChCtrl(val);
 	} else if (addr == 0x4016) {
@@ -123,4 +127,15 @@ uint16_t Mapper::read2Bytes(uint16_t addr) {
 	}
 
 	return ret;
+}
+
+void Mapper::startDMA(uint8_t val) {
+	uint16_t addr = val;
+	addr <<= 8;
+
+	uint8_t* dst = mPPU->getSpriteMemAddr();
+	std::memcpy(dst, &mWRAM[addr], 256);
+
+	EventQueue& eq = EventQueue::getInstance();
+	eq.push(new EventDMA(val));
 }

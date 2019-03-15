@@ -21,6 +21,9 @@ public:
 	virtual uint8_t getCR2() const {
 		return mCR2;
 	}
+	virtual uint8_t* getSpriteMemAddr() {
+		return &mSpriteMem[0];
+	}
 	virtual uint8_t getSR();
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
@@ -42,6 +45,7 @@ protected:
 	uint32_t mFrames;
 
 	uint8_t* mMem;
+	uint8_t mSpriteMem[256];
 };
 
 #endif
