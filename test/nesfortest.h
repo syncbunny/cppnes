@@ -14,6 +14,7 @@ public:
 protected:
 	void check_eq(const char* msg, int val, int expect);
 	void cputest();
+	void cputest_RESET_1();
 	void cputest_LDA_IMM_1();
 	void cputest_LDA_IMM_2();
 	void cputest_LDA_ABS_1();
@@ -23,6 +24,10 @@ protected:
 	void cputest_DEY_1();
 	void cputest_ROR_ZP_1();
 	void cputest_ROR_ZP_2();
+	void cputest_ASL_A_1();
+	void cputest_ASL_A_2();
+	void cputest_LSR_A_1();
+	void cputest_LSR_A_2();
 	void cputest_BPL_1();
 	void cputest_BPL_2();
 	void cputest_BPL_3();

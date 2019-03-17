@@ -15,6 +15,9 @@
 #include "vmapper.h"
 
 #define PROM_BASE_ADDR (0x8000)
+const uint16_t NMI_VECTOR = 0xFFFA;
+const uint16_t RESET_VECTOR = 0xFFFC;
+const uint16_t BRK_VECTOR = 0xFFFE;
 
 NESForTest::NESForTest()
 :NES(){
@@ -60,6 +63,7 @@ void NESForTest::test() {
 }
 
 void NESForTest::cputest() {
+	cputest_RESET_1();
 	cputest_LDA_IMM_1();
 	cputest_LDA_IMM_2();
 	cputest_LDA_ABS_1();
@@ -69,6 +73,10 @@ void NESForTest::cputest() {
 	cputest_DEY_1();
 	cputest_ROR_ZP_1();
 	cputest_ROR_ZP_2();
+	cputest_ASL_A_1();
+	cputest_ASL_A_2();
+	cputest_LSR_A_1();
+	cputest_LSR_A_2();
 	cputest_BPL_1();
 	cputest_BPL_2();
 	cputest_BPL_3();
@@ -87,6 +95,20 @@ void NESForTest::cputest() {
 	cputest_BCC_1();
 	cputest_BCC_2();
 	cputest_BCC_3();
+}
+
+void NESForTest::cputest_RESET_1() {
+	// Initialize
+	mPROM[RESET_VECTOR - PROM_BASE_ADDR +0] = 0x11;
+	mPROM[RESET_VECTOR - PROM_BASE_ADDR +1] = 0x80;
+	mTestCPU->testInit();
+	mTestCPU->reset();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_RESET_1: PC", mTestCPU->PC(), 0x8011);
 }
 
 void NESForTest::cputest_LDA_IMM_1() {
@@ -243,6 +265,74 @@ void NESForTest::cputest_ROR_ZP_2() {
 	check_eq("cputest_ROR_ZP_2: flag Z", mTestCPU->flagZ(), 0);
 	check_eq("cputest_ROR_ZP_2: flag N", mTestCPU->flagN(), 1);
 	check_eq("cputest_ROR_ZP_2: flag C", mTestCPU->flagC(), 1);
+}
+
+void NESForTest::cputest_ASL_A_1() {
+	// Initialize
+	mPROM[0] = 0x0A;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+	mTestCPU->setA(0x33);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ASL_A_1: PC", mTestCPU->PC(), 0x8001);
+	check_eq("cputest_ASL_A_1: A", mTestCPU->A(), 0x66);
+	check_eq("cputest_ASL_A_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_A_1: flag C", mTestCPU->flagC(), 0);
+}
+
+void NESForTest::cputest_ASL_A_2() {
+	// Initialize
+	mPROM[0] = 0x0A;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+	mTestCPU->setA(0xB3);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ASL_A_2: PC", mTestCPU->PC(), 0x8001);
+	check_eq("cputest_ASL_A_2: A", mTestCPU->A(), 0x66);
+	check_eq("cputest_ASL_A_2: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_A_2: flag C", mTestCPU->flagC(), 1);
+}
+
+void NESForTest::cputest_LSR_A_1() {
+	// Initialize
+	mPROM[0] = 0x4A;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+	mTestCPU->setA(0x33);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_LSR_A_1: PC", mTestCPU->PC(), 0x8001);
+	check_eq("cputest_LSR_A_1: A", mTestCPU->A(), 0x19);
+	check_eq("cputest_LSR_A_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_LSR_A_1: flag C", mTestCPU->flagC(), 1);
+}
+
+void NESForTest::cputest_LSR_A_2() {
+	// Initialize
+	mPROM[0] = 0x4A;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+	mTestCPU->setA(0x32);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_LSR_A_2: PC", mTestCPU->PC(), 0x8001);
+	check_eq("cputest_LSR_A_2: A", mTestCPU->A(), 0x19);
+	check_eq("cputest_LSR_A_2: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_LSR_A_2: flag C", mTestCPU->flagC(), 0);
 }
 
 void NESForTest::cputest_BPL_1() {
