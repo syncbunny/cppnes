@@ -169,168 +169,168 @@ void CPU::clock() {
 	uint8_t o = mMapper->read1Byte(mPC++);
 	switch(o) {
 	// at this point, mPC is first byte of operand.
-	case 0x05: // ORA (ZeroPage)
+	case 0x05: // ORA ZeroPage
 		ORA(ZERO_PAGE(mPC));
 		break;
-	case 0x09: // ORA #XX
+	case 0x09: // ORA Immediate
 		ORA(IMM());
 		break;
-	case 0x0A: // ASL A
+	case 0x0A: // ASL Accumulator
 		ASL_A();
 		break;
-	case 0x10: // BPL $XX
+	case 0x10: // BPL Relative
 		BPL(REL());
 		break;
-	case 0x18: // CLC
+	case 0x18: // CLC Implied
 		CLC();
 		break;
-	case 0x1D: // ORA (ABS_X)
+	case 0x1D: // ORA Absolute,X
 		ORA(ABS_IND(mX));
 		break;
-	case 0x20: // JSR $XXXX
+	case 0x20: // JSR Absolute
 		JSR(ABS());
 		break;
-	case 0x29: // AND (Imm)
+	case 0x29: // AND Immediate 
 		AND(IMM());
 		break;
-	case 0x2A: // ROL_A
+	case 0x2A: // ROL Accumulator
 		ROL_A();
 		break;
-	case 0x30: // BMI $XX
+	case 0x30: // BMI Relative
 		BMI(REL());
 	 	break;
-	case 0x38: // SEC
+	case 0x38: // SEC Implied
 		SEC();
 		break;
-	case 0x40: // RTI
+	case 0x40: // RTI Implied
 		RTI();
 		break;
-	case 0x48: // PHA
+	case 0x48: // PHA Implied
 		PHA();
 		break;
-	case 0x4A: // LSR A
+	case 0x4A: // LSR Accumulator
 		LSR_A();
 		break;
-	case 0x4C: // JMP $XXXX
+	case 0x4C: // JMP Absolute
 		JMP(ABS());
 		break;
-	case 0x58: // CLI
+	case 0x58: // CLI Implied
 		CLI();
 		break;
-	case 0x60: // RTS
+	case 0x60: // RTS Implied
 		RTS();
 		break;
-	case 0x66: // ROR (ZeroPage)
+	case 0x66: // ROR ZeroPage
 		ROR(ZERO_PAGE(mPC));
 		break;
-	case 0x68: // PLA
+	case 0x68: // PLA Implied
 		PLA();
 		break;
-	case 0x69: // ADC (Imm)
+	case 0x69: // ADC Immediate
 		ADC(IMM());
 		break;
-	case 0x6A: // ROR_A
+	case 0x6A: // ROR Accumulator
 		ROR_A();
 		break;
-	case 0x84: // STY (ZeroPage)
-		STY(ZERO_PAGE(mPC));
-		break;
-	case 0x85: // STA $ZZ
-		STA(ZERO_PAGE(mPC));
-		break;
-	case 0x9D: // STA (ABS_X)
-		STA(ABS_IND(mX));
-		break;
-	case 0xAD: // LDA $XXXX
-		LDA(ABS());
-		break;
-	case 0x78: //SEI
+	case 0x78: // SEI Implied
 		SEI();
 		break;
-	case 0x88: // DEY
+	case 0x84: // STY ZeroPage
+		STY(ZERO_PAGE(mPC));
+		break;
+	case 0x85: // STA ZeroPage
+		STA(ZERO_PAGE(mPC));
+		break;
+	case 0x88: // DEY Implied
 		DEY();
 		break;
-	case 0x8D: // STA (ABS)
+	case 0x8D: // STA Absolute
 		STA(ABS());
 		break;
-	case 0x90: // BCC (Rel)
+	case 0x90: // BCC Relative 
 		BCC(REL());
 		break;
-	case 0x91: // STA ($NN), Y
+	case 0x91: // STA Indirect,Y
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
-	case 0x95: // STA (ZEROPage, X)
+	case 0x95: // STA ZeroPage,X
 		STA(ZERO_PAGE_IND(mX));
 		break;
-	case 0x98: // TYA
+	case 0x98: // TYA Implied
 		TYA();
 		break;
-	case 0x99: // STA (Absolute X)
+	case 0x99: // STA Absolute,Y
+		STA(ABS_IND(mY));
+		break;
+	case 0x9D: // STA Absolute,X
 		STA(ABS_IND(mX));
 		break;
-	case 0xA0: // LDY #$XX
+	case 0xA0: // LDY Immediate
 		LDY(IMM());
 		break;
-	case 0xA1: // LDA (Indirect, X)
+	case 0xA1: // LDA Indirect,X
 		LDA(INDIRECT(ZERO_PAGE_IND(mX)));
 		break;
-	case 0xA2: // LDX #$XX
+	case 0xA2: // LDX Immediate
 		LDX(IMM());
 		break;
-	case 0xA5: // LDA (ZeroPage)
+	case 0xA5: // LDA ZeroPage
 		LDA(ZERO_PAGE(mPC));
 		break;
-	case 0xA8: // TAY
+	case 0xA8: // TAY Implied
 		TAY();
 		break;
-	case 0xA9: // LDA #XX
+	case 0xA9: // LDA Immediate
 		LDA(IMM());
 		break;
-	case 0xAA: // TAX
+	case 0xAA: // TAX Implied
 		TAX();
 		break;
-	case 0xB0: // BCS(Rel)
+	case 0xAD: // LDA Absolute
+		LDA(ABS());
+		break;
+	case 0xB0: // BCS Relative
 		BCS(REL());
 		break;
-	case 0xB1: // LDA(Indirect Y), 
+	case 0xB1: // LDA Indirect,Y
 		LDA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
-	case 0xB5: // LDA(ZeroPage, X)
+	case 0xB5: // LDA ZeroPage,X
 		LDA(ZERO_PAGE_IND( mX));
 		break;
-	case 0xB9: // LDA(Absolute, Y)
+	case 0xB9: // LDA Absolute,Y
 		LDA(ABS_IND(mY));
 		break;
-	case 0xC0: // CPY (Imm)
+	case 0xC0: // CPY Immediate
 		CPY(IMM());
 		break;
-	case 0xC8: // INY
+	case 0xC8: // INY Implied
 		INY();
 		break;
-	case 0xC9: // CMP (Imm)
+	case 0xC9: // CMP Immediate
 		CMP(IMM());
 		break;
-	case 0xCA: // DEX
+	case 0xCA: // DEX Implied
 		DEX();
 		break;
-	case 0xD0: // BNE $XX
+	case 0xD0: // BNE Relative
 		BNE(REL());
 		break;
-	case 0xE6: // INC $00XX
+	case 0xE6: // INC ZeroPage
 		INC(ZERO_PAGE(mPC));
 		break;
-	case 0xE8: // INX
+	case 0xE8: // INX Implied
 		INX();
 		break;
-	case 0xEA: // NOP
+	case 0xEA: // NOP Implied
 		break;
-	case 0xE9: // SBC (Imm)
+	case 0xE9: // SBC Immediate
 		SBC(IMM());
 		break;
-	case 0xF0: // BEQ (Rel)
+	case 0xF0: // BEQ Relative
 		BEQ(REL());
 		break;
-	case 0xFD: // SBC (ABS_IND(X))
+	case 0xFD: // SBC Absolute,X
 		SBC(ABS_IND(mX));
 		break;
 	default:
