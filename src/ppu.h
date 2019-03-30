@@ -32,6 +32,9 @@ public:
 
 protected:
 	virtual void startVR();
+	virtual void frameStart();
+	virtual void frameEnd();
+	virtual void renderSprite(int y);
 
 protected:
 	uint8_t mCR1; // Control Register
@@ -46,6 +49,7 @@ protected:
 
 	uint8_t* mMem;
 	uint8_t mSpriteMem[256];
+	uint8_t* mScreen;
 };
 
 #endif

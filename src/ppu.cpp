@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <cstring>
 #include "ppu.h"
 #include "events.h"
 
@@ -29,21 +30,32 @@
 #define SET_VBLANK() (mSR |= FLAG_VBLANK)
 #define CLEAR_VBLANK() (mSR &= IFLAG_VBLANK)
 
+struct Sprite {
+	uint8_t y;
+	uint8_t n;
+	uint8_t a;
+	uint8_t x;
+} __attribute__((packed)) ;
+
 PPU::PPU()
 :mMem(0){
 	mSR = 0;
 	mMem = new uint8_t[0x4000];
+	mScreen = new uint8_t[256*240*3]; // RGB
 	mLine = 0;
 	mLineClock = 0;
 	mFrames = 0;
 }
 
 PPU::~PPU() {
+	delete[] mMem;
+	delete[] mScreen;
 }
 
 void PPU::clock() {
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
+		this->renderSprite(mLine);
 		mLineClock -= CLOCKS_PAR_LINE;
 		mLine++;
 		if (mLine == DRAWABLE_LINES) {
@@ -51,6 +63,7 @@ void PPU::clock() {
 		}
 		if (mLine >= SCAN_LINES) {
 			mLine = 0;
+			this->frameEnd();
 			mFrames++;
 		}
 	}
@@ -84,6 +97,23 @@ void PPU::write(uint8_t val) {
 	mMem[mWriteAddr] = val;
 }
 
+void PPU::renderSprite(int y) {
+	struct Sprite* sprites = (struct Sprite*)mSpriteMem;
+	for (int i = 0; i < 1; i++) {
+		if (y+1 < sprites[i].y || y+1 >= sprites[i].y+8 || y+1 >=240) {
+			continue;
+		}
+		for (int x = 0; x < 256; x++) {
+			if (x < sprites[i].x || x >= sprites[i].x+8) {
+				continue;
+			}
+			mScreen[((y+1)*256 +x)*3 +0] = 255;
+			mScreen[((y+1)*256 +x)*3 +1] = 0;
+			mScreen[((y+1)*256 +x)*3 +2] = 0;
+		}
+	}
+}
+
 void PPU::startVR() {
 	SET_VBLANK();
 	if (mCR1 & FLAG_NMI_ON_VB) {
@@ -91,3 +121,12 @@ void PPU::startVR() {
 		eq.push(new EventNMI());
 	}
 }
+
+void PPU::frameStart() {
+	// TODO: fill with BG color
+	memset(mScreen, 0, 256*240*3);
+}
+
+void PPU::frameEnd() {
+}
+

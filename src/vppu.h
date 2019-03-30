@@ -14,6 +14,8 @@ public:
 
 protected:
 	virtual void startVR();
+	virtual void frameEnd();
+	virtual void writeFrame();
 };
 
 #endif
