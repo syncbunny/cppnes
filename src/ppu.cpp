@@ -26,9 +26,12 @@
 #define FLAG_SP_HIT (0x40)
 #define SCANLINE_SPLITE_OVER (0x20)
 #define IFLAG_VBLANK (0x7F)
+#define IFLAG_SP_HIT (0xBF)
 
 #define SET_VBLANK() (mSR |= FLAG_VBLANK)
 #define CLEAR_VBLANK() (mSR &= IFLAG_VBLANK)
+#define SET_SP_HIT() (mSR |= FLAG_SP_HIT)
+#define CLEAR_SP_HIT() (mSR &= IFLAG_SP_HIT)
 
 struct Sprite {
 	uint8_t y;
@@ -55,6 +58,7 @@ PPU::~PPU() {
 void PPU::clock() {
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
+		CLEAR_SP_HIT();
 		this->renderSprite(mLine);
 		mLineClock -= CLOCKS_PAR_LINE;
 		mLine++;
@@ -99,17 +103,38 @@ void PPU::write(uint8_t val) {
 
 void PPU::renderSprite(int y) {
 	struct Sprite* sprites = (struct Sprite*)mSpriteMem;
-	for (int i = 0; i < 1; i++) {
-		if (y+1 < sprites[i].y || y+1 >= sprites[i].y+8 || y+1 >=240) {
+	uint8_t *spTable;
+	if ((mCR1 & FLAG_SP_PAT_TABLE_ADDR) == 0) {
+		spTable = &mMem[0x0000];
+	} else {
+		spTable = &mMem[0x1000];
+	}
+	int u,v;
+	for (int i = 0; i < 64; i++) {
+		struct Sprite* sp = &sprites[i];
+		if (y+1 < sp->y || y+1 >= sp->y+8 || y+1 >=240) {
 			continue;
 		}
+		v = y+1 - sp->y;
+		uint8_t pat1 = spTable[sp->n*16 + v*2 +0];
+		uint8_t pat2 = spTable[sp->n*16 + v*2 +1];
 		for (int x = 0; x < 256; x++) {
-			if (x < sprites[i].x || x >= sprites[i].x+8) {
+			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}
-			mScreen[((y+1)*256 +x)*3 +0] = 255;
-			mScreen[((y+1)*256 +x)*3 +1] = 0;
-			mScreen[((y+1)*256 +x)*3 +2] = 0;
+			u = x - sp->x;
+			uint8_t u2 = u%8; // u2: 0 to 7
+
+			// TODO: use color palette
+			uint8_t col = 0;
+			col |= (pat2 >> u2)&0x01; col <<= 1;
+			col |= (pat1 >> u2)&0x01; col <<= 6;
+			if (col != 0 && i == 0) {
+				SET_SP_HIT();
+			}
+			mScreen[((y+1)*256 +x)*3 +0] = col;
+			mScreen[((y+1)*256 +x)*3 +1] = col;
+			mScreen[((y+1)*256 +x)*3 +2] = col;
 		}
 	}
 }

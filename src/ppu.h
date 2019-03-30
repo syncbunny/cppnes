@@ -25,6 +25,9 @@ public:
 		return &mSpriteMem[0];
 	}
 	virtual uint8_t getSR();
+	virtual uint8_t* getMemory() {
+		return mMem;
+	}
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
 	virtual void write(uint8_t val);
