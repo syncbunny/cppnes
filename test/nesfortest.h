@@ -28,6 +28,9 @@ protected:
 	void cputest_ASL_A_2();
 	void cputest_LSR_A_1();
 	void cputest_LSR_A_2();
+	void cputest_CMP_IMM_1();
+	void cputest_CMP_IMM_2();
+	void cputest_CMP_IMM_3();
 	void cputest_BPL_1();
 	void cputest_BPL_2();
 	void cputest_BPL_3();
