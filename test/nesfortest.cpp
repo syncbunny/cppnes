@@ -70,6 +70,7 @@ void NESForTest::cputest() {
 	cputest_STA_ABS_1();
 	cputest_STA_ABS_X_1();
 	cputest_JSR_ABS_1();
+	cputest_INY_1();
 	cputest_DEY_1();
 	cputest_ROR_ZP_1();
 	cputest_ROR_ZP_2();
@@ -213,6 +214,22 @@ void NESForTest::cputest_JSR_ABS_1() {
 	check_eq("cputest_JSR_ABS_1: S", mTestCPU->S(), s-2);
 	check_eq("cputest_JSR_ABS_1: Stack", mWRAM[0x0100+s], 0x80);
 	check_eq("cputest_JSR_ABS_1: Stack-1", mWRAM[0x0100+s-1], 0x02);
+}
+
+void NESForTest::cputest_INY_1() {
+	// Initialize
+	mPROM[0] = 0xC8; // 0x8000
+	mTestCPU->testInit();
+	mTestCPU->setY(0xFF);
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_INY_1: PC", mTestCPU->PC(), 0x8001);
+	check_eq("cputest_INY_1: Y", mTestCPU->Y(), 0x00);
+	check_eq("cputest_INY_1: flag Z", mTestCPU->flagZ(), 1);
+	check_eq("cputest_INY_1: flag N", mTestCPU->flagN(), 0);
 }
 
 void NESForTest::cputest_DEY_1() {

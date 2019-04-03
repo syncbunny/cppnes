@@ -21,6 +21,7 @@ protected:
 	void cputest_STA_ABS_1();
 	void cputest_STA_ABS_X_1();
 	void cputest_JSR_ABS_1();
+	void cputest_INY_1();
 	void cputest_DEY_1();
 	void cputest_ROR_ZP_1();
 	void cputest_ROR_ZP_2();
