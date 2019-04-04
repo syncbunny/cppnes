@@ -25,6 +25,9 @@ public:
 		return &mSpriteMem[0];
 	}
 	virtual uint8_t getSR();
+	virtual uint8_t* getMemory() {
+		return mMem;
+	}
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
 	virtual void write(uint8_t val);
@@ -32,6 +35,9 @@ public:
 
 protected:
 	virtual void startVR();
+	virtual void frameStart();
+	virtual void frameEnd();
+	virtual void renderSprite(int y);
 
 protected:
 	uint8_t mCR1; // Control Register
@@ -46,6 +52,7 @@ protected:
 
 	uint8_t* mMem;
 	uint8_t mSpriteMem[256];
+	uint8_t* mScreen;
 };
 
 #endif

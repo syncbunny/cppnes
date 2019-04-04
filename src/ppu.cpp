@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <cstring>
 #include "ppu.h"
 #include "events.h"
 
@@ -25,25 +26,40 @@
 #define FLAG_SP_HIT (0x40)
 #define SCANLINE_SPLITE_OVER (0x20)
 #define IFLAG_VBLANK (0x7F)
+#define IFLAG_SP_HIT (0xBF)
 
 #define SET_VBLANK() (mSR |= FLAG_VBLANK)
 #define CLEAR_VBLANK() (mSR &= IFLAG_VBLANK)
+#define SET_SP_HIT() (mSR |= FLAG_SP_HIT)
+#define CLEAR_SP_HIT() (mSR &= IFLAG_SP_HIT)
+
+struct Sprite {
+	uint8_t y;
+	uint8_t n;
+	uint8_t a;
+	uint8_t x;
+} __attribute__((packed)) ;
 
 PPU::PPU()
 :mMem(0){
 	mSR = 0;
 	mMem = new uint8_t[0x4000];
+	mScreen = new uint8_t[256*240*3]; // RGB
 	mLine = 0;
 	mLineClock = 0;
 	mFrames = 0;
 }
 
 PPU::~PPU() {
+	delete[] mMem;
+	delete[] mScreen;
 }
 
 void PPU::clock() {
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
+		CLEAR_SP_HIT();
+		this->renderSprite(mLine);
 		mLineClock -= CLOCKS_PAR_LINE;
 		mLine++;
 		if (mLine == DRAWABLE_LINES) {
@@ -51,6 +67,7 @@ void PPU::clock() {
 		}
 		if (mLine >= SCAN_LINES) {
 			mLine = 0;
+			this->frameEnd();
 			mFrames++;
 		}
 	}
@@ -84,6 +101,44 @@ void PPU::write(uint8_t val) {
 	mMem[mWriteAddr] = val;
 }
 
+void PPU::renderSprite(int y) {
+	struct Sprite* sprites = (struct Sprite*)mSpriteMem;
+	uint8_t *spTable;
+	if ((mCR1 & FLAG_SP_PAT_TABLE_ADDR) == 0) {
+		spTable = &mMem[0x0000];
+	} else {
+		spTable = &mMem[0x1000];
+	}
+	int u,v;
+	for (int i = 0; i < 64; i++) {
+		struct Sprite* sp = &sprites[i];
+		if (y+1 < sp->y || y+1 >= sp->y+8 || y+1 >=240) {
+			continue;
+		}
+		v = y+1 - sp->y;
+		uint8_t pat1 = spTable[sp->n*16 + v*2 +0];
+		uint8_t pat2 = spTable[sp->n*16 + v*2 +1];
+		for (int x = 0; x < 256; x++) {
+			if (x < sp->x || x >= sp->x+8) {
+				continue;
+			}
+			u = x - sp->x;
+			uint8_t u2 = u%8; // u2: 0 to 7
+
+			// TODO: use color palette
+			uint8_t col = 0;
+			col |= (pat2 >> u2)&0x01; col <<= 1;
+			col |= (pat1 >> u2)&0x01; col <<= 6;
+			if (col != 0 && i == 0) {
+				SET_SP_HIT();
+			}
+			mScreen[((y+1)*256 +x)*3 +0] = col;
+			mScreen[((y+1)*256 +x)*3 +1] = col;
+			mScreen[((y+1)*256 +x)*3 +2] = col;
+		}
+	}
+}
+
 void PPU::startVR() {
 	SET_VBLANK();
 	if (mCR1 & FLAG_NMI_ON_VB) {
@@ -91,3 +146,12 @@ void PPU::startVR() {
 		eq.push(new EventNMI());
 	}
 }
+
+void PPU::frameStart() {
+	// TODO: fill with BG color
+	memset(mScreen, 0, 256*240*3);
+}
+
+void PPU::frameEnd() {
+}
+

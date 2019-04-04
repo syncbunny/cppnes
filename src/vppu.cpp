@@ -1,4 +1,5 @@
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
 #include "vppu.h"
 
 typedef PPU super;
@@ -24,4 +25,21 @@ uint8_t VPPU::getSR() {
 void VPPU::startVR() {
 	printf("PPU::startVR:%d frame\n", mFrames);
 	super::startVR();
+}
+
+void VPPU::frameEnd() {
+	this->writeFrame();
+}
+
+void VPPU::writeFrame() {
+	char fname[256];
+	::sprintf(fname, "FRAME_%04d.ppm", mFrames);
+	FILE* f = fopen(fname, "w");
+	if (f) {
+		fprintf(f, "P6\n");
+		fprintf(f, "256 240\n");
+		fprintf(f, "255\n");
+		fwrite(mScreen, 1, 256*240*3, f);
+		fclose(f);
+	}
 }

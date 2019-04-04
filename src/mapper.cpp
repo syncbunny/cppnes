@@ -23,6 +23,7 @@ void Mapper::setPROM(uint8_t* base, std::size_t size) {
 
 void Mapper::setCROM(uint8_t* base, std::size_t size) {
 	mCROM = base;
+	memcpy(mPPU->getMemory(), mCROM, 0x2000); // 8kbytes
 }
 
 void Mapper::setPPU(PPU* ppu) {
