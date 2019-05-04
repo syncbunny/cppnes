@@ -15,6 +15,7 @@
 #define FLAG_SP_PAT_TABLE_ADDR (0x08) // 0: &H0000, 1: &H1000
 #define FLAG_ADDR_INC // 0: +1, 1: +32
 #define ID_NAME_TABLE_ADDR (0x03) 
+#define NAME_TABLE_BASE (0x2800)
 //  +-----------+-----------+
 //  | 2 ($2800) | 3 ($2C00) |
 //  +-----------+-----------+
@@ -57,6 +58,7 @@ PPU::~PPU() {
 
 void PPU::clock() {
 	mLineClock++;
+	this->renderBG(mLineClock, mLine);
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		CLEAR_SP_HIT();
 		this->renderSprite(mLine);
@@ -99,6 +101,36 @@ void PPU::write(uint8_t val) {
 		throw std::runtime_error(msg);
 	}
 	mMem[mWriteAddr] = val;
+}
+
+void PPU::renderBG(int x, int y) {
+	// TODO: support scroll
+
+	// calc nametable address
+	int u = x/8;
+	int v = y/8;
+	uint16_t addr = NAME_TABLE_BASE +  u*32+v;
+	uint8_t pat = mMem[addr];
+
+	uint8_t *bpTable;
+	if ((mCR1 & FLAG_BG_PAT_TABLE_ADDR) == 0) {
+		bpTable = &mMem[0x0000];
+	} else {
+		bpTable = &mMem[0x1000];
+	}
+	int uu = x%8;
+	int vv = y%8;
+
+	uint8_t pat1 = bpTable[pat*16 + vv*2 +0];
+	uint8_t pat2 = bpTable[pat*16 + vv*2 +1];
+
+	// TODO: use color palette
+	uint8_t col = 0;
+	col |= (pat2 >> uu)&0x01; col <<= 1;
+	col |= (pat1 >> uu)&0x01; col <<= 6;
+	mScreen[(y*256 +x)*3 +0] = col;
+	mScreen[(y*256 +x)*3 +1] = col;
+	mScreen[(y*256 +x)*3 +2] = col;
 }
 
 void PPU::renderSprite(int y) {

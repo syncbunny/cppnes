@@ -37,6 +37,7 @@ protected:
 	virtual void startVR();
 	virtual void frameStart();
 	virtual void frameEnd();
+	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
 
 protected:
