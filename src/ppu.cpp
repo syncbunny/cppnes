@@ -50,10 +50,12 @@ PPU::PPU()
 	mLine = 0;
 	mLineClock = 0;
 	mFrames = 0;
+	mWriteMode = 0;
 }
 
 PPU::~PPU() {
 	delete[] mMem;
+	delete[] mSpriteMem;
 	delete[] mScreen;
 }
 
@@ -77,13 +79,25 @@ void PPU::clock() {
 }
 
 void PPU::setScroll(uint8_t val) {
-	mScrollVH <<= 8;
-	mScrollVH |= val;
+	if (mWriteMode == 0) {
+		mScrollX = val;
+		mWriteMode = 1;
+	} else {
+		mScrollY = val;
+		mWriteMode = 0;
+	}
 }
 
 void PPU::setWriteAddr(uint8_t a) {
-	mWriteAddr <<= 8;
-	mWriteAddr |= a;
+	if (mWriteMode == 0) {
+		mWriteAddr &= 0x00FF;
+		mWriteAddr |= ((uint16_t)a)<<8;
+		mWriteMode = 1;
+	} else {
+		mWriteAddr &= 0xFF00;
+		mWriteAddr |= a;
+		mWriteMode = 0;
+	}
 }
 
 uint8_t PPU::getSR() {
@@ -110,18 +124,14 @@ void PPU::write(uint8_t val) {
 }
 
 void PPU::renderBG(int x, int y) {
-	// TODO: support scroll
 	if (y >= 240) {
 		return;
 	}
 
-	uint16_t scrollV, scrollH;
-	scrollV = mScrollVH; scrollV >>= 8;
-	scrollH = mScrollVH; scrollH &= 0x00FF;
-	int xx = x + scrollH;
-	int yy = y + scrollV;
+	int xx = x + mScrollX;
+	int yy = y + mScrollY;
 
-	int nameTalbeId = mCR1 & ID_NAME_TABLE_ADDR;
+	int nameTableId = mCR1 & ID_NAME_TABLE_ADDR;
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
@@ -129,7 +139,17 @@ void PPU::renderBG(int x, int y) {
 	// calc nametable address
 	int u = xx/8;
 	int v = yy/8;
-	uint16_t addr = nameTableBase[nameTalbeId] + v*32+u;
+	if (u >= 32) {
+		u -= 32;
+		if (mMirror == MIRROR_V) {
+			if (nameTableId == 0) {
+				nameTableId = 1; // 0x2400
+			} else {
+				nameTableId = 0; // 0x2000
+			}
+		}
+	}
+	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
 
 	uint8_t *bpTable;

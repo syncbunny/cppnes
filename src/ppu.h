@@ -53,11 +53,13 @@ protected:
 	uint8_t mSR;  // Status Register
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
-	uint16_t mScrollVH; // Hi=V, Low=H
+	uint8_t mScrollX;
+	uint8_t mScrollY;
 	uint8_t mMirror;
 	uint16_t mLine;
 	uint16_t mLineClock;
 	uint32_t mFrames;
+	uint8_t mWriteMode; // 0 or 1
 
 	uint8_t* mMem;
 	uint8_t* mSpriteMem;
