@@ -14,7 +14,7 @@ main.o:main.cpp cpu.h nes.h ppu.h apu.h mapper.h
 	${CXX} ${CXXFLAGS} main.cpp
 nes.o: nes.cpp nes.h cpu.h ppu.h vppu.h mapper.h vmapper.h
 	${CXX} ${CXXFLAGS} nes.cpp
-mapper.o: mapper.cpp mapper.h ppu.h
+mapper.o: mapper.cpp mapper.h ppu.h cpu.h
 	${CXX} ${CXXFLAGS} mapper.cpp
 vmapper.o: vmapper.cpp vmapper.h mapper.h
 	${CXX} ${CXXFLAGS} vmapper.cpp

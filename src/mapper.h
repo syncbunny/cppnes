@@ -20,6 +20,7 @@ public:
 	virtual void write2Bytes(uint16_t addr, uint16_t val);
 	virtual uint8_t read1Byte(uint16_t addr);
 	virtual uint16_t read2Bytes(uint16_t addr);
+	virtual uint16_t read2BytesLE(uint16_t addr);
 	virtual void push2Bytes(uint16_t addr, uint16_t val);
 	virtual uint16_t pop2Bytes(uint16_t addr);
 

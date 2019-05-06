@@ -105,6 +105,9 @@ bool NES::loadCartridge(const char* path) {
 	mMapper->setCROM(&mCartridgeMem[offset+pROMSize*16*1024], cROMSize*8*1024);
 	mMapper->setNo(this->getMapperNo());
 
+	uint8_t flag6 = mCartridgeMem[5];
+	mPPU->setMirror((flag6&1)? PPU::MIRROR_V:PPU::MIRROR_H);
+
 	return true;
 }
 

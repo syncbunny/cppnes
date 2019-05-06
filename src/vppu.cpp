@@ -11,6 +11,11 @@ VPPU::VPPU()
 VPPU::~VPPU() {
 }
 
+void VPPU::setMirror(int m) {
+	printf("PPU::setMirror: %s\n", (m==0)? "Horizontal":"Vertical");
+	super::setMirror(m);
+}
+
 void VPPU::write(uint8_t val) {
 	printf("PPU::write: %04x:%02x\n", mWriteAddr, val);
 	super::write(val);
@@ -28,12 +33,15 @@ void VPPU::startVR() {
 }
 
 void VPPU::frameEnd() {
-	this->writeFrame();
+	if ((mFrames %10) == 0) {
+		writeFrame();
+	}
+	super::frameEnd();
 }
 
 void VPPU::writeFrame() {
 	char fname[256];
-	::sprintf(fname, "FRAME_%04d.ppm", mFrames);
+	sprintf(fname, "FRAME_%04d.ppm", mFrames);
 	FILE* f = fopen(fname, "w");
 	if (f) {
 		fprintf(f, "P6\n");

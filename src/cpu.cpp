@@ -48,12 +48,13 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define LDX(addr) (mX = mMapper->read1Byte(addr), UPDATE_NZ(mX))
 #define LDY(addr) (mY = mMapper->read1Byte(addr), UPDATE_NZ(mY))
 #define STA(addr) (mMapper->write1Byte(addr, mA))
+#define STX(addr) (mMapper->write1Byte(addr, mX))
 #define STY(addr) (mMapper->write1Byte(addr, mY))
 #define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
-#define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a][_mem], UPDATE_NZ(mA))
-#define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a][_mem], UPDATE_NZ(mA))
+#define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a*256 + _mem], UPDATE_NZ(mA))
+#define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a*256 + _mem], UPDATE_NZ(mA))
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
 #define JMP(addr) (mPC = addr)
@@ -92,27 +93,30 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define REL() (_mem=mMapper->read1Byte(mPC), mPC+1+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_IND(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
+#if 0
+#define INDIRECT(x) (mMapper->read2BytesLE((x)))
+#endif
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
 int clockTable[] = {
 	/* xx    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F */
-	/* 00 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 10 */  6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 20 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 30 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 40 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 50 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 60 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 70 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 80 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* 90 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* A0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 
-	/* B0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* C0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* D0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* E0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	/* F0 */  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	/*  0 */  1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 0, 3, 3, 0,
+	/* 10 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
+	/* 20 */  3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* 30 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
+	/* 40 */  1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* 50 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
+	/* 60 */  1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* 70 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
+	/* 80 */  0, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
+	/* 90 */  2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
+	/* a0 */  2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* b0 */  2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	/* c0 */  2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* d0 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
+	/* e0 */  2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	/* f0 */  2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0,
 };
 
 CPU::CPU(Mapper* mapper)
@@ -221,6 +225,9 @@ void CPU::clock() {
 	case 0x60: // RTS Implied
 		RTS();
 		break;
+	case 0x65: // ADC ZeroPage
+		ADC(ZERO_PAGE(mPC));
+		break;
 	case 0x66: // ROR ZeroPage
 		ROR(ZERO_PAGE(mPC));
 		break;
@@ -233,6 +240,9 @@ void CPU::clock() {
 	case 0x6A: // ROR Accumulator
 		ROR_A();
 		break;
+	case 0x75: // ADC Immediate
+		ADC(ZERO_PAGE_IND(mX));
+		break;
 	case 0x78: // SEI Implied
 		SEI();
 		break;
@@ -241,6 +251,9 @@ void CPU::clock() {
 		break;
 	case 0x85: // STA ZeroPage
 		STA(ZERO_PAGE(mPC));
+		break;
+	case 0x86: // STX ZeroPage
+		STX(ZERO_PAGE(mPC));
 		break;
 	case 0x88: // DEY Implied
 		DEY();
@@ -275,8 +288,14 @@ void CPU::clock() {
 	case 0xA2: // LDX Immediate
 		LDX(IMM());
 		break;
+	case 0xA4: // LDY ZeroPage
+		LDY(ZERO_PAGE(mPC));
+		break;
 	case 0xA5: // LDA ZeroPage
 		LDA(ZERO_PAGE(mPC));
+		break;
+	case 0xA6: // LDX ZeroPage
+		LDX(ZERO_PAGE(mPC));
 		break;
 	case 0xA8: // TAY Implied
 		TAY();
@@ -316,6 +335,9 @@ void CPU::clock() {
 		break;
 	case 0xD0: // BNE Relative
 		BNE(REL());
+		break;
+	case 0xD1: // CMP Indirect,Y
+		CMP(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
 	case 0xE6: // INC ZeroPage
 		INC(ZERO_PAGE(mPC));
@@ -373,34 +395,36 @@ void CPU::startDMA() {
 }
 
 void CPU::buildADC_VCTable() {
+	mADC_VCTable = new uint8_t[256*256];
 	for (int a = 0; a < 256; a++) {
 		for (int b = 0; b < 256; b++) {
-			mADC_VCTable[a][b] = 0;
+			mADC_VCTable[a*255 +b] = 0;
 			if (a+b >= 256) {
-				mADC_VCTable[a][b] |= FLG_C;
+				mADC_VCTable[a*256 +b] |= FLG_C;
 			}
 			uint8_t aa = a, bb = b;
 			uint8_t cc = a+b;
 
 			if ((aa <= 0x7F && cc >= 0x80) || (aa >= 0x80 && cc <= 0x7F)) {
-				mADC_VCTable[a][b] |= FLG_V;
+				mADC_VCTable[a*256 +b] |= FLG_V;
 			}
 		}
 	}
 }
 
 void CPU::buildSBC_VCTable() {
+	mSBC_VCTable = new uint8_t[256*256];
 	for (int a = 0; a < 256; a++) {
 		for (int b = 0; b < 256; b++) {
-			mSBC_VCTable[a][b] = 0;
+			mSBC_VCTable[a*256 +b] = 0;
 			if (a >= b) {
-				mSBC_VCTable[a][b] |= FLG_C;
+				mSBC_VCTable[a*256 +b] |= FLG_C;
 			}
 			uint8_t aa = a, bb = b;
 			uint8_t cc = a-b;
 
 			if ((aa <= 0x7F && cc >= 0x80) || (aa >= 0x80 && cc <= 0x7F)) {
-				mSBC_VCTable[a][b] |= FLG_V;
+				mSBC_VCTable[a*256 +b] |= FLG_V;
 			}
 		}
 	}

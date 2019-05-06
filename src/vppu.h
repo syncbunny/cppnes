@@ -9,6 +9,7 @@ public:
 	virtual ~VPPU();
 
 public:
+	virtual void setMirror(int m);
 	virtual void write(uint8_t val);
 	virtual uint8_t getSR();
 
