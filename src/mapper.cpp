@@ -126,6 +126,27 @@ uint16_t Mapper::read2Bytes(uint16_t addr) {
 		ret = mPROM[addr-0x8000];
 		ret |= ((uint16_t)mPROM[addr-0x8000 +1] << 8);
 	}
+	else if (addr < 0x0800) {
+		ret = mWRAM[addr];
+		ret |= ((uint16_t)mWRAM[addr+1] << 8);
+	}
+
+	return ret;
+}
+
+uint16_t Mapper::read2BytesLE(uint16_t addr) {
+	uint16_t ret = 0;
+
+	if (addr >= 0x8000) {
+		ret = mPROM[addr-0x8000];
+		ret <<= 8;
+		ret |= mPROM[addr-0x8000 +1];
+	}
+	else if (addr < 0x0800) {
+		ret = mWRAM[addr];
+		ret <<= 8;
+		ret |= mWRAM[addr +1];
+	}
 
 	return ret;
 }

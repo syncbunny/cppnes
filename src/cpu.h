@@ -37,8 +37,8 @@ protected:
 	bool mResetFlag;
 	bool mNMIFlag;
 
-	uint8_t mADC_VCTable[256][256];
-	uint8_t mSBC_VCTable[256][256];
+	uint8_t *mADC_VCTable;
+	uint8_t *mSBC_VCTable;
 };
 
 #endif

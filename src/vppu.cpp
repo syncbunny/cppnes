@@ -28,7 +28,9 @@ void VPPU::startVR() {
 }
 
 void VPPU::frameEnd() {
-	this->writeFrame();
+	if ((mFrames %10) == 0) {
+		this->writeFrame();
+	}
 }
 
 void VPPU::writeFrame() {
