@@ -45,6 +45,7 @@ PPU::PPU()
 :mMem(0){
 	mSR = 0;
 	mMem = new uint8_t[0x4000];
+	mSpriteMem = new uint8_t[256];
 	mScreen = new uint8_t[256*240*3]; // RGB
 	mLine = 0;
 	mLineClock = 0;
@@ -110,6 +111,15 @@ void PPU::write(uint8_t val) {
 
 void PPU::renderBG(int x, int y) {
 	// TODO: support scroll
+	if (y >= 240) {
+		return;
+	}
+
+	uint16_t scrollV, scrollH;
+	scrollV = mScrollVH; scrollV >>= 8;
+	scrollH = mScrollVH; scrollH &= 0x00FF;
+	int xx = x + scrollH;
+	int yy = y + scrollV;
 
 	int nameTalbeId = mCR1 & ID_NAME_TABLE_ADDR;
 	uint16_t nameTableBase[] = {
@@ -117,9 +127,9 @@ void PPU::renderBG(int x, int y) {
 	};
 
 	// calc nametable address
-	int u = x/8;
-	int v = y/8;
-	uint16_t addr = nameTableBase[nameTalbeId] +  u*32+v;
+	int u = xx/8;
+	int v = yy/8;
+	uint16_t addr = nameTableBase[nameTalbeId] + v*32+u;
 	uint8_t pat = mMem[addr];
 
 	uint8_t *bpTable;
@@ -128,8 +138,8 @@ void PPU::renderBG(int x, int y) {
 	} else {
 		bpTable = &mMem[0x1000];
 	}
-	int uu = x%8;
-	int vv = y%8;
+	int uu = xx%8;
+	int vv = yy%8;
 
 	uint8_t pat1 = bpTable[pat*16 + vv*2 +0];
 	uint8_t pat2 = bpTable[pat*16 + vv*2 +1];
@@ -144,6 +154,9 @@ void PPU::renderBG(int x, int y) {
 }
 
 void PPU::renderSprite(int y) {
+	if (y >= 239) {
+		return;
+	}
 	struct Sprite* sprites = (struct Sprite*)mSpriteMem;
 	uint8_t *spTable;
 	if ((mCR1 & FLAG_SP_PAT_TABLE_ADDR) == 0) {

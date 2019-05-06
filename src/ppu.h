@@ -5,10 +5,17 @@
 
 class PPU {
 public:
+	enum {
+		MIRROR_H, MIRROR_V
+	};
+public:
 	PPU();
 	virtual ~PPU();
 
 public:
+	virtual void setMirror(int m) {
+		mMirror = m;
+	}
 	virtual void setCR1(uint8_t v) {
 		mCR1 = v;
 	}
@@ -47,12 +54,13 @@ protected:
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
 	uint16_t mScrollVH; // Hi=V, Low=H
+	uint8_t mMirror;
 	uint16_t mLine;
 	uint16_t mLineClock;
 	uint32_t mFrames;
 
 	uint8_t* mMem;
-	uint8_t mSpriteMem[256];
+	uint8_t* mSpriteMem;
 	uint8_t* mScreen;
 };
 
