@@ -46,6 +46,7 @@ protected:
 	virtual void frameEnd();
 	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
+	virtual void getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t* rgb);
 
 protected:
 	uint8_t mCR1; // Control Register

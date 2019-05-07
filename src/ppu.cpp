@@ -104,6 +104,7 @@ uint8_t PPU::getSR() {
 	uint8_t sr = mSR;
 
 	mScrollOffsetTarget = 0;
+	mWriteMode = 0;
 	CLEAR_VBLANK();
 
 	return sr;
@@ -124,7 +125,7 @@ void PPU::write(uint8_t val) {
 }
 
 void PPU::renderBG(int x, int y) {
-	if (y >= 240) {
+	if (x >= 256 || y >= 240) {
 		return;
 	}
 
@@ -135,6 +136,8 @@ void PPU::renderBG(int x, int y) {
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
+	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
+	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
 	// calc nametable address
 	int u = xx/8;
@@ -142,11 +145,13 @@ void PPU::renderBG(int x, int y) {
 	if (u >= 32) {
 		u -= 32;
 		if (mMirror == MIRROR_V) {
-			if (nameTableId == 0) {
-				nameTableId = 1; // 0x2400
-			} else {
-				nameTableId = 0; // 0x2000
-			}
+			nameTableId = overFlowNTIdMirrorV[nameTableId];
+		}
+	}
+	if (v >= 30) {
+		v -= 30;
+		if (mMirror == MIRROR_H) {
+			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
 	}
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
@@ -161,16 +166,7 @@ void PPU::renderBG(int x, int y) {
 	int uu = xx%8;
 	int vv = yy%8;
 
-	uint8_t pat1 = bpTable[pat*16 + vv*2 +0];
-	uint8_t pat2 = bpTable[pat*16 + vv*2 +1];
-
-	// TODO: use color palette
-	uint8_t col = 0;
-	col |= (pat2 >> uu)&0x01; col <<= 1;
-	col |= (pat1 >> uu)&0x01; col <<= 6;
-	mScreen[(y*256 +x)*3 +0] = col;
-	mScreen[(y*256 +x)*3 +1] = col;
-	mScreen[(y*256 +x)*3 +2] = col;
+	this->getColor(bpTable, pat, uu, vv, &mScreen[(y*256+x)*3]);
 }
 
 void PPU::renderSprite(int y) {
@@ -191,8 +187,8 @@ void PPU::renderSprite(int y) {
 			continue;
 		}
 		v = y+1 - sp->y;
-		uint8_t pat1 = spTable[sp->n*16 + v*2 +0];
-		uint8_t pat2 = spTable[sp->n*16 + v*2 +1];
+		uint8_t pat1 = spTable[sp->n*16 + v];
+		uint8_t pat2 = spTable[sp->n*16 + v + 8];
 		for (int x = 0; x < 256; x++) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
@@ -230,3 +226,15 @@ void PPU::frameStart() {
 void PPU::frameEnd() {
 }
 
+void PPU::getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t* rgb) {
+	// TODO: use color palette
+	u = 7-u;
+	uint8_t pat1 = base[pat*16 + v];
+	uint8_t pat2 = base[pat*16 + v + 8];
+	uint8_t col = 0;
+	col |= (pat2 >> u)&0x01; col <<= 1;
+	col |= (pat1 >> u)&0x01; col <<= 6;
+	rgb[0] = col;
+	rgb[1] = col;
+	rgb[2] = col;
+}
