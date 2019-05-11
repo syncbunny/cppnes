@@ -50,10 +50,12 @@ PPU::PPU()
 	mLine = 0;
 	mLineClock = 0;
 	mFrames = 0;
+	mWriteMode = 0;
 }
 
 PPU::~PPU() {
 	delete[] mMem;
+	delete[] mSpriteMem;
 	delete[] mScreen;
 }
 
@@ -77,19 +79,32 @@ void PPU::clock() {
 }
 
 void PPU::setScroll(uint8_t val) {
-	mScrollVH <<= 8;
-	mScrollVH |= val;
+	if (mWriteMode == 0) {
+		mScrollX = val;
+		mWriteMode = 1;
+	} else {
+		mScrollY = val;
+		mWriteMode = 0;
+	}
 }
 
 void PPU::setWriteAddr(uint8_t a) {
-	mWriteAddr <<= 8;
-	mWriteAddr |= a;
+	if (mWriteMode == 0) {
+		mWriteAddr &= 0x00FF;
+		mWriteAddr |= ((uint16_t)a)<<8;
+		mWriteMode = 1;
+	} else {
+		mWriteAddr &= 0xFF00;
+		mWriteAddr |= a;
+		mWriteMode = 0;
+	}
 }
 
 uint8_t PPU::getSR() {
 	uint8_t sr = mSR;
 
 	mScrollOffsetTarget = 0;
+	mWriteMode = 0;
 	CLEAR_VBLANK();
 
 	return sr;
@@ -110,26 +125,36 @@ void PPU::write(uint8_t val) {
 }
 
 void PPU::renderBG(int x, int y) {
-	// TODO: support scroll
-	if (y >= 240) {
+	if (x >= 256 || y >= 240) {
 		return;
 	}
 
-	uint16_t scrollV, scrollH;
-	scrollV = mScrollVH; scrollV >>= 8;
-	scrollH = mScrollVH; scrollH &= 0x00FF;
-	int xx = x + scrollH;
-	int yy = y + scrollV;
+	int xx = x + mScrollX;
+	int yy = y + mScrollY;
 
-	int nameTalbeId = mCR1 & ID_NAME_TABLE_ADDR;
+	int nameTableId = mCR1 & ID_NAME_TABLE_ADDR;
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
+	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
+	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
 	// calc nametable address
 	int u = xx/8;
 	int v = yy/8;
-	uint16_t addr = nameTableBase[nameTalbeId] + v*32+u;
+	if (u >= 32) {
+		u -= 32;
+		if (mMirror == MIRROR_V) {
+			nameTableId = overFlowNTIdMirrorV[nameTableId];
+		}
+	}
+	if (v >= 30) {
+		v -= 30;
+		if (mMirror == MIRROR_H) {
+			nameTableId = overFlowNTIdMirrorH[nameTableId];
+		}
+	}
+	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
 
 	uint8_t *bpTable;
@@ -141,16 +166,7 @@ void PPU::renderBG(int x, int y) {
 	int uu = xx%8;
 	int vv = yy%8;
 
-	uint8_t pat1 = bpTable[pat*16 + vv*2 +0];
-	uint8_t pat2 = bpTable[pat*16 + vv*2 +1];
-
-	// TODO: use color palette
-	uint8_t col = 0;
-	col |= (pat2 >> uu)&0x01; col <<= 1;
-	col |= (pat1 >> uu)&0x01; col <<= 6;
-	mScreen[(y*256 +x)*3 +0] = col;
-	mScreen[(y*256 +x)*3 +1] = col;
-	mScreen[(y*256 +x)*3 +2] = col;
+	this->getColor(bpTable, pat, uu, vv, &mScreen[(y*256+x)*3]);
 }
 
 void PPU::renderSprite(int y) {
@@ -171,8 +187,8 @@ void PPU::renderSprite(int y) {
 			continue;
 		}
 		v = y+1 - sp->y;
-		uint8_t pat1 = spTable[sp->n*16 + v*2 +0];
-		uint8_t pat2 = spTable[sp->n*16 + v*2 +1];
+		uint8_t pat1 = spTable[sp->n*16 + v];
+		uint8_t pat2 = spTable[sp->n*16 + v + 8];
 		for (int x = 0; x < 256; x++) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
@@ -210,3 +226,15 @@ void PPU::frameStart() {
 void PPU::frameEnd() {
 }
 
+void PPU::getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t* rgb) {
+	// TODO: use color palette
+	u = 7-u;
+	uint8_t pat1 = base[pat*16 + v];
+	uint8_t pat2 = base[pat*16 + v + 8];
+	uint8_t col = 0;
+	col |= (pat2 >> u)&0x01; col <<= 1;
+	col |= (pat1 >> u)&0x01; col <<= 6;
+	rgb[0] = col;
+	rgb[1] = col;
+	rgb[2] = col;
+}

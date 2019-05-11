@@ -85,6 +85,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
+#define TXS() (mS = mX) // No flag update
 
 #define IMM() (mPC++)
 #define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -276,6 +277,9 @@ void CPU::clock() {
 	case 0x99: // STA Absolute,Y
 		STA(ABS_IND(mY));
 		break;
+	case 0x9A: // TXS Implied
+		TXS();
+		break;
 	case 0x9D: // STA Absolute,X
 		STA(ABS_IND(mX));
 		break;
@@ -320,6 +324,9 @@ void CPU::clock() {
 		break;
 	case 0xB9: // LDA Absolute,Y
 		LDA(ABS_IND(mY));
+		break;
+	case 0xBD: // LDA Absolute,X
+		LDA(ABS_IND(mX));
 		break;
 	case 0xC0: // CPY Immediate
 		CPY(IMM());

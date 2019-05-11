@@ -17,6 +17,7 @@ protected:
 	virtual void startVR();
 	virtual void frameEnd();
 	virtual void writeFrame();
+	virtual void dumpNameTable();
 };
 
 #endif

@@ -46,6 +46,7 @@ protected:
 	virtual void frameEnd();
 	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
+	virtual void getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t* rgb);
 
 protected:
 	uint8_t mCR1; // Control Register
@@ -53,11 +54,13 @@ protected:
 	uint8_t mSR;  // Status Register
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
-	uint16_t mScrollVH; // Hi=V, Low=H
+	uint8_t mScrollX;
+	uint8_t mScrollY;
 	uint8_t mMirror;
 	uint16_t mLine;
 	uint16_t mLineClock;
 	uint32_t mFrames;
+	uint8_t mWriteMode; // 0 or 1
 
 	uint8_t* mMem;
 	uint8_t* mSpriteMem;
