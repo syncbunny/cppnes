@@ -33,6 +33,9 @@ public:
 	uint8_t flagN() const {
 		return ((mP&0x80) != 0)? 1:0;
 	}
+	uint8_t flagV() const {
+		return ((mP&0x40) != 0)? 1:0;
+	}
 	uint8_t flagC() const {
 		return ((mP&0x01) != 0)? 1:0;
 	}
@@ -59,6 +62,12 @@ public:
 	}
 	void clearFlagN() {
 		mP &= 0x7F;
+	}
+	void setFlagV() {
+		mP |= 0x40;
+	}
+	void clearFlagV() {
+		mP &= 0xB0;
 	}
 	void setFlagZ() {
 		mP |= 0x02;
