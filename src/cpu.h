@@ -4,6 +4,11 @@
 #include <cstdint>
 #include "mapper.h"
 
+struct APvc {
+	uint8_t a;
+	uint8_t p_vc;
+};
+
 class CPU {
 public:
 	CPU(Mapper* mapper);
@@ -21,7 +26,7 @@ protected:
 	void updateP(uint8_t n);
 	void doReset();
 	void doNMI();
-	void buildADC_VCTable();
+	void buildADC_APvcTable();
 	void buildSBC_VCTable();
 
 protected:
@@ -37,7 +42,7 @@ protected:
 	bool mResetFlag;
 	bool mNMIFlag;
 
-	uint8_t *mADC_VCTable;
+	APvc *mADC_APvcTable;
 	uint8_t *mSBC_VCTable;
 };
 

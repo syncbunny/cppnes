@@ -35,7 +35,7 @@ void VPPU::startVR() {
 void VPPU::frameEnd() {
 	if ((mFrames %10) == 0) {
 		writeFrame();
-		dumpNameTable();
+//		dumpNameTable();
 	}
 	super::frameEnd();
 }

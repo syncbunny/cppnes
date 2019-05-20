@@ -53,7 +53,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
-#define ADC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA+=_mem, mA+=(mP&FLG_C)? 1:0, mP&=IFLG_VC, mP|=mADC_VCTable[_a*256 + _mem], UPDATE_NZ(mA))
+#define ADC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, mP&=IFLG_VC, _A_Pvc=mADC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP|=_A_Pvc.p_vc,  UPDATE_NZ(mA))
 #define SBC(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mA-=_mem, mA-=(mP&FLG_C)? 0:1, mP&=IFLG_VC, mP|=mSBC_VCTable[_a*256 + _mem], UPDATE_NZ(mA))
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
@@ -126,7 +126,7 @@ CPU::CPU(Mapper* mapper)
 	mResetFlag = false;
 	mNMIFlag = false;
 
-	buildADC_VCTable();
+	buildADC_APvcTable();
 	buildSBC_VCTable();
 }
 
@@ -169,7 +169,9 @@ void CPU::clock() {
 	uint8_t _mem;
 	uint8_t _mem2;
 	uint8_t _zpaddr;
+	uint8_t _c;
 	uint16_t _addr;
+	struct APvc _A_Pvc;
 
 	// read opcode and exam it.
 	uint8_t o = mMapper->read1Byte(mPC++);
@@ -401,19 +403,22 @@ void CPU::startDMA() {
 	mClockRemain = 514;
 }
 
-void CPU::buildADC_VCTable() {
-	mADC_VCTable = new uint8_t[256*256];
+void CPU::buildADC_APvcTable() {
+	mADC_APvcTable = new struct APvc[256*256*2];
 	for (int a = 0; a < 256; a++) {
 		for (int b = 0; b < 256; b++) {
-			mADC_VCTable[a*255 +b] = 0;
-			if (a+b >= 256) {
-				mADC_VCTable[a*256 +b] |= FLG_C;
-			}
-			uint8_t aa = a, bb = b;
-			uint8_t cc = a+b;
+			for (int c = 0; c < 2; c++) {
+				uint8_t aa = a;
+				uint8_t cc = a+b+c;
+				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
+				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
+				if (a+b+c >= 256) {
+					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
+				}
 
-			if ((aa <= 0x7F && cc >= 0x80) || (aa >= 0x80 && cc <= 0x7F)) {
-				mADC_VCTable[a*256 +b] |= FLG_V;
+				if (aa <= 0x7F && cc >= 0x80) {
+					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
+				}
 			}
 		}
 	}
