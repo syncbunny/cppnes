@@ -37,6 +37,10 @@ protected:
 	void cputest_LSR_A_2();
 	void cputest_ADC_IMM_1();
 	void cputest_ADC_IMM_2();
+	void cputest_ADC_IMM_3();
+	void cputest_SBC_IMM_1();
+	void cputest_SBC_IMM_2();
+	void cputest_SBC_IMM_3();
 	void cputest_CMP_IMM_1();
 	void cputest_CMP_IMM_2();
 	void cputest_CMP_IMM_3();
