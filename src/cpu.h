@@ -27,7 +27,7 @@ protected:
 	void doReset();
 	void doNMI();
 	void buildADC_APvcTable();
-	void buildSBC_VCTable();
+	void buildSBC_APvcTable();
 
 protected:
 	Mapper* mMapper;
@@ -43,7 +43,7 @@ protected:
 	bool mNMIFlag;
 
 	APvc *mADC_APvcTable;
-	uint8_t *mSBC_VCTable;
+	APvc *mSBC_APvcTable;
 };
 
 #endif
