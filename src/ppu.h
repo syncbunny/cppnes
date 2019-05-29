@@ -3,6 +3,10 @@
 
 #include <cstdint>
 
+struct Palette {
+        uint8_t col[4]; // col[0]: clear
+} __attribute__((packed)) ;
+
 class PPU {
 public:
 	enum {
@@ -46,7 +50,8 @@ protected:
 	virtual void frameEnd();
 	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
-	virtual void getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t* rgb);
+	virtual void getColor(uint8_t* base, uint8_t pat, uint8_t x, uint8_t y, uint8_t u, uint8_t v, uint8_t* rgb);
+	virtual struct Palette* getPalette(uint8_t* base, uint8_t x, uint8_t y);
 
 protected:
 	uint8_t mCR1; // Control Register
