@@ -434,11 +434,11 @@ void CPU::buildSBC_APvcTable() {
 				uint8_t cc = a-b-_c;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
-				if ((int)a - (int)b - (int)_c < 0) {
+				if ((int)a >= (int)b + (int)_c) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
 
-				if (aa >= 0x80 && cc <= 0x7F) {
+				if ((aa >= 0x80 && cc <= 0x7F) || (aa <= 0x7F && cc >= 0x80)) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
