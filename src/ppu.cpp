@@ -186,7 +186,16 @@ void PPU::renderBG(int x, int y) {
 	int uu = xx%8;
 	int vv = yy%8;
 
-	this->getColor(bpTable, pat, u, v, uu, vv, &mScreen[(y*256+x)*3]);
+	struct Palette *paletteP;
+	if (addr == this->mLastBGNameTableAddr) {
+		paletteP = mLastPaletteP;
+	} else {
+		paletteP = this->getPalette(bpTable, u, v);
+	}
+	this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3]);
+
+	this->mLastPaletteP = paletteP;
+	this->mLastBGNameTableAddr = addr;
 }
 
 void PPU::renderSprite(int y) {
@@ -215,6 +224,7 @@ void PPU::renderSprite(int y) {
 			}
 			u = x - sp->x;
 			uint8_t u2 = u%8; // u2: 0 to 7
+			u2 = 7-u2;
 
 			// TODO: use color palette
 			uint8_t col = 0;
@@ -246,9 +256,7 @@ void PPU::frameStart() {
 void PPU::frameEnd() {
 }
 
-void PPU::getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t uu, uint8_t vv, uint8_t* rgb) {
-	struct Palette *paletteP = this->getPalette(base, u, v);
-
+void PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t uu, uint8_t vv, uint8_t* rgb) {
 	uu = 7-uu;
 	uint8_t pat1 = base[pat*16 + vv];
 	uint8_t pat2 = base[pat*16 + vv + 8];
@@ -267,12 +275,18 @@ void PPU::getColor(uint8_t* base, uint8_t pat, uint8_t u, uint8_t v, uint8_t uu,
  * v: [0 .. 29]
  */
 struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
+	printf("PPU::getPalette(%p, %d, %d)\n", base, u, v);
 	uint8_t* attrBase = base+0x03C0;
 	int attrU = u/4; // [0 .. 8]
 	int attrV = v/4; // [0 .. 8]
 	uint8_t attr = attrBase[attrV*8 +attrU];
+#if 0
 	int attrUU = (u%4)/2; // [0 .. 1]
 	int attrVV = (v%4)/2; // [0 .. 1]
+#else
+	int attrUU = (u/2)%2; // [0 .. 1]
+	int attrVV = (v/2)%2; // [0 .. 1]
+#endif
 	int attrUUVV = attrVV*2 + attrUU; // [0 .. 3]
 	switch (attrUUVV) {
 	// break through
