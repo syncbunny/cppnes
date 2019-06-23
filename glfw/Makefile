@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-c -Wall -O -DGL_SILENCE_DEPRECATION
+CXXFLAGS=-std=c++11 -c -Wall -O -DGL_SILENCE_DEPRECATION
 LD=clang++
 LDFLAGS=
 LIBS=-lglfw -lGLEW
