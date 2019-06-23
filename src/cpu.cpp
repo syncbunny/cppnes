@@ -412,11 +412,12 @@ void CPU::buildADC_APvcTable() {
 				uint8_t cc = a+b+c;
 				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
+ 
 				if (a+b+c >= 256) {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
 
-				if (aa <= 0x7F && cc >= 0x80) {
+				if (((a ^ b) & 0x80) == 0) {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
@@ -431,14 +432,14 @@ void CPU::buildSBC_APvcTable() {
 			for (int c = 0; c < 2; c++) {
 				uint8_t _c = (c==0)? 1:0;
 				uint8_t aa = a;
-				uint8_t cc = a-b-_c;
+				int cc = 0xff + a - b + c;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
-				if ((int)a - (int)b - (int)_c < 0) {
+				if (cc >= 0x100) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
 
-				if (aa >= 0x80 && cc <= 0x7F) {
+				if (((a ^ b) & 0x80) == 0) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
