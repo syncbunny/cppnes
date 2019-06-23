@@ -6,7 +6,7 @@ LIBS=-lglfw -lGLEW
 FWS=-framework OpenGL
 
 TARGET=nes
-OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o apu.o pad.o vpad.o events.o
+OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o
 SRCDIR=../src
 
 ${TARGET}:${OBJS}
@@ -23,11 +23,11 @@ vmapper.o: ${SRCDIR}/vmapper.cpp ${SRCDIR}/vmapper.h ${SRCDIR}/mapper.h
 cpu.o: ${SRCDIR}/cpu.cpp ${SRCDIR}/cpu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}/cpu.cpp
 ppu.o: ${SRCDIR}/ppu.cpp ${SRCDIR}/ppu.h ${SRCDIR}/events.h
-	${CXX} ${CXXFLAGS} ppu.cpp
+	${CXX} ${CXXFLAGS} ${SRCDIR}/ppu.cpp
 vppu.o: ${SRCDIR}/vppu.cpp ${SRCDIR}/vppu.h ${SRCDIR}/ppu.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}/vppu.cpp
 apu.o: ${SRCDIR}/apu.cpp ${SRCDIR}/apu.h
-	${CXX} ${CXXFLAGS} apu.cpp
+	${CXX} ${CXXFLAGS} ${SRCDIR}/apu.cpp
 pad.o: ${SRCDIR}/pad.cpp ${SRCDIR}/pad.h
 	${CXX} ${CXXFLAGS} ${SRCDIR}/pad.cpp
 vpad.o: ${SRCDIR}/vpad.cpp ${SRCDIR}/vpad.h ${SRCDIR}/pad.h
