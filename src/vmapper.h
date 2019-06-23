@@ -9,8 +9,8 @@ public:
 	virtual ~VMapper();
 
 public:
-	virtual void setPROM(uint8_t* addr, std::size_t size);
-	virtual void setCROM(uint8_t* addr, std::size_t size);
+	virtual void setPROM(uint8_t* addr, size_t size);
+	virtual void setCROM(uint8_t* addr, size_t size);
 	virtual void setNo(uint8_t no);
 	virtual uint8_t read1Byte(uint16_t addr);
 	virtual uint16_t read2Bytes(uint16_t addr);
