@@ -9,12 +9,12 @@ VMapper::VMapper() {
 VMapper::~VMapper() {
 }
 
-void VMapper::setPROM(uint8_t* base, std::size_t size) {
+void VMapper::setPROM(uint8_t* base, size_t size) {
 	printf("Mapper::setPROM(%p, %ld)\n", base, size);
 	super::setPROM(base, size);
 }
 
-void VMapper::setCROM(uint8_t* base, std::size_t size) {
+void VMapper::setCROM(uint8_t* base, size_t size) {
 	printf("Mapper::setCROM(%p, %ld)\n", base, size);
 	super::setCROM(base, size);
 }
