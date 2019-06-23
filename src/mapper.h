@@ -10,8 +10,8 @@ public:
 
 public:
 	virtual void setWRAM(uint8_t* addr);
-	virtual void setPROM(uint8_t* addr, std::size_t size);
-	virtual void setCROM(uint8_t* addr, std::size_t size);
+	virtual void setPROM(uint8_t* addr, size_t size);
+	virtual void setCROM(uint8_t* addr, size_t size);
 	virtual void setPPU(class PPU* ppu);
 	virtual void setAPU(class APU* apu);
 	virtual void setPAD(class PAD* pad);

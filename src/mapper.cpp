@@ -17,11 +17,11 @@ void Mapper::setWRAM(uint8_t* base) {
 	mWRAM = base;
 }
 
-void Mapper::setPROM(uint8_t* base, std::size_t size) {
+void Mapper::setPROM(uint8_t* base, size_t size) {
 	mPROM = base;
 }
 
-void Mapper::setCROM(uint8_t* base, std::size_t size) {
+void Mapper::setCROM(uint8_t* base, size_t size) {
 	mCROM = base;
 	memcpy(mPPU->getMemory(), mCROM, 0x2000); // 8kbytes
 }
