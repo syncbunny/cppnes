@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include "glfwrenderer.h"
 #include "nes.h"
+#include "pad.h"
 
 #define GL_SILENCE_DEPRECATION 1
 
@@ -24,6 +25,7 @@ int main(int argc, char* argv[]) {
 
 	GLFWRenderer* renderer = new GLFWRenderer();
 	NES* nes = new NES(renderer);
+	renderer->bindPAD(nes->getPAD());
 
 	nes->powerOn();
 	nes->loadCartridge(conf.romPath.c_str());
