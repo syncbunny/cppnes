@@ -15,6 +15,7 @@
 #include "mapper.h"
 #include "vmapper.h"
 #include "events.h"
+#include "renderer.h"
 
 #define FLAG6_V_MIRROR           (0x01)
 #define FLAG6_HAS_BATTARY_BACKUP (0x02)
@@ -27,11 +28,11 @@
 #define FLAG7_NES_2_0      (0x0C)
 #define FLAG7_MAPPER_HIGH  (0xF0)
 
-NES::NES() {
+NES::NES(Renderer* r) {
 	mMapper = new VMapper();
 	mCPU = new CPU(mMapper);
-	//mPPU = new PPU();
-	mPPU = new VPPU();
+	mPPU = new PPU();
+	//mPPU = new VPPU();
 	mAPU = new APU();
 	mPAD = new VPAD();
 
@@ -39,6 +40,9 @@ NES::NES() {
 	mDClockPPU = 0;
 	mCartridgeMem = 0;
 
+	if (r) {
+		mPPU->bindRenderer(r);
+	}
 	mWRAM = new uint8_t[0x0800];
 	mMapper->setWRAM(mWRAM);
 	mMapper->setPPU(mPPU);

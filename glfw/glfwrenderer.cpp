@@ -20,6 +20,12 @@ GLFWRenderer::~GLFWRenderer() {
 }
 
 void GLFWRenderer::render(const uint8_t* p) {
+	memcpy(mPix, p, 256*240*3);
+
+	glBindTexture(GL_TEXTURE_2D, mTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(mProg);
 
@@ -32,7 +38,7 @@ void GLFWRenderer::render(const uint8_t* p) {
 	mGLFW->checkError("glVertexArray");
 
 	glfwSwapBuffers(mWindow);
-	glfwWaitEvents();
+	glfwPollEvents();
 	mGLFW->checkError("glfwWaitEent");
 
 	mGLFW->checkError();
@@ -58,10 +64,10 @@ void GLFWRenderer::createWindow() {
 
 void GLFWRenderer::createObj() {
 	GLfloat positionData[] = {
-		-0.5f, +0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		+0.5f, +0.5f, 0.0f,
-		+0.5f, -0.5f, 0.0f,
+		-1.0f, +1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		+1.0f, +1.0f, 0.0f,
+		+1.0f, -1.0f, 0.0f,
 	};
 	glGenVertexArrays(1, &mVAO);
 	glBindVertexArray(mVAO);
@@ -80,22 +86,6 @@ void GLFWRenderer::createObj() {
 
 void GLFWRenderer::createTexture() {
 	mPix = new uint8_t[256*240*3];
-
-	for(int y = 0; y < 240; y++){
-		for (int x = 0; x < 256; x++) {
-			int xx = x/16;
-			int yy = y/16;
-			if ((xx+yy)%2 == 0) {
-				mPix[(y*256 +x)*3 +0] = 255;
-				mPix[(y*256 +x)*3 +1] = 255;
-				mPix[(y*256 +x)*3 +2] = 255;
-			} else {
-				mPix[(y*256 +x)*3 +0] = 0;
-				mPix[(y*256 +x)*3 +1] = 0;
-				mPix[(y*256 +x)*3 +2] = 0;
-			}
-		}
-	}
 
 	glGenTextures(1, &mTex);
 	glBindTexture(GL_TEXTURE_2D, mTex);
