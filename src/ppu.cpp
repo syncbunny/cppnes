@@ -257,7 +257,7 @@ void PPU::frameStart() {
 
 void PPU::frameEnd() {
 	if (mRenderer) {
-		mRenderer->render();
+		mRenderer->render(mScreen);
 	}
 }
 
