@@ -9,6 +9,7 @@ GLFWRenderer::GLFWRenderer()
 	mGLFW = new GLFW();
 	createWindow();
 	createObj();
+	createTexture();
 	mProg = mGLFW->createProgcamFromFile("base.vs", "base.fs");
 }
 
@@ -23,7 +24,8 @@ void GLFWRenderer::render(const uint8_t* p) {
 	glUseProgram(mProg);
 
 	glBindVertexArray(mVAO);
-	mGLFW->checkError("glBindVertexArray");
+	glBindTexture(GL_TEXTURE_2D, mTex);
+	mGLFW->checkError("glBindTexture");
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	mGLFW->checkError("DrawArrays");
 	glBindVertexArray(0);
@@ -74,4 +76,35 @@ void GLFWRenderer::createObj() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	mGLFW->checkError("createObj");
+}
+
+void GLFWRenderer::createTexture() {
+	mPix = new uint8_t[256*240*3];
+
+	for(int y = 0; y < 240; y++){
+		for (int x = 0; x < 256; x++) {
+			int xx = x/16;
+			int yy = y/16;
+			if ((xx+yy)%2 == 0) {
+				mPix[(y*256 +x)*3 +0] = 255;
+				mPix[(y*256 +x)*3 +1] = 255;
+				mPix[(y*256 +x)*3 +2] = 255;
+			} else {
+				mPix[(y*256 +x)*3 +0] = 0;
+				mPix[(y*256 +x)*3 +1] = 0;
+				mPix[(y*256 +x)*3 +2] = 0;
+			}
+		}
+	}
+
+	glGenTextures(1, &mTex);
+	glBindTexture(GL_TEXTURE_2D, mTex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	mGLFW->checkError("createTexture");
 }

@@ -16,6 +16,7 @@ public:
 protected:
 	void createWindow();
 	void createObj();
+	void createTexture();
 
 protected:
 	GLFW* mGLFW;
@@ -23,6 +24,9 @@ protected:
 	GLuint mProg;
 	GLuint mVBO;
 	GLuint mVAO;
+	GLuint mTex;
+
+	uint8_t* mPix;
 };
 
 #endif
