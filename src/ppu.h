@@ -7,6 +7,8 @@ struct Palette {
         uint8_t col[4]; // col[0]: clear
 } __attribute__((packed)) ;
 
+class Renderer;
+
 class PPU {
 public:
 	enum {
@@ -17,6 +19,9 @@ public:
 	virtual ~PPU();
 
 public:
+	virtual void bindRenderer(Renderer* r) {
+		mRenderer = r;
+	}
 	virtual void setMirror(int m) {
 		mMirror = m;
 	}
@@ -73,6 +78,8 @@ protected:
 
 	uint16_t mLastBGNameTableAddr;
 	struct Palette* mLastPaletteP;
+
+	Renderer* mRenderer;
 };
 
 #endif

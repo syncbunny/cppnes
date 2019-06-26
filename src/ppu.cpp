@@ -2,6 +2,7 @@
 #include <cstring>
 #include "ppu.h"
 #include "events.h"
+#include "renderer.h"
 
 #define CLOCKS_PAR_LINE (341)
 #define DRAWABLE_LINES (240)
@@ -71,6 +72,7 @@ PPU::PPU()
 	mLineClock = 0;
 	mFrames = 0;
 	mWriteMode = 0;
+	mRenderer = 0;
 }
 
 PPU::~PPU() {
@@ -254,6 +256,9 @@ void PPU::frameStart() {
 }
 
 void PPU::frameEnd() {
+	if (mRenderer) {
+		mRenderer->render();
+	}
 }
 
 void PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t uu, uint8_t vv, uint8_t* rgb) {
