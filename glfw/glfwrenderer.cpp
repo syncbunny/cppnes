@@ -9,6 +9,7 @@ GLFWRenderer::GLFWRenderer()
 	mGLFW = new GLFW();
 	createWindow();
 	createObj();
+	createTexture();
 	mProg = mGLFW->createProgcamFromFile("base.vs", "base.fs");
 }
 
@@ -19,18 +20,25 @@ GLFWRenderer::~GLFWRenderer() {
 }
 
 void GLFWRenderer::render(const uint8_t* p) {
+	memcpy(mPix, p, 256*240*3);
+
+	glBindTexture(GL_TEXTURE_2D, mTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(mProg);
 
 	glBindVertexArray(mVAO);
-	mGLFW->checkError("glBindVertexArray");
+	glBindTexture(GL_TEXTURE_2D, mTex);
+	mGLFW->checkError("glBindTexture");
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	mGLFW->checkError("DrawArrays");
 	glBindVertexArray(0);
 	mGLFW->checkError("glVertexArray");
 
 	glfwSwapBuffers(mWindow);
-	glfwWaitEvents();
+	glfwPollEvents();
 	mGLFW->checkError("glfwWaitEent");
 
 	mGLFW->checkError();
@@ -56,10 +64,10 @@ void GLFWRenderer::createWindow() {
 
 void GLFWRenderer::createObj() {
 	GLfloat positionData[] = {
-		-0.5f, +0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		+0.5f, +0.5f, 0.0f,
-		+0.5f, -0.5f, 0.0f,
+		-1.0f, +1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		+1.0f, +1.0f, 0.0f,
+		+1.0f, -1.0f, 0.0f,
 	};
 	glGenVertexArrays(1, &mVAO);
 	glBindVertexArray(mVAO);
@@ -74,4 +82,19 @@ void GLFWRenderer::createObj() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	mGLFW->checkError("createObj");
+}
+
+void GLFWRenderer::createTexture() {
+	mPix = new uint8_t[256*240*3];
+
+	glGenTextures(1, &mTex);
+	glBindTexture(GL_TEXTURE_2D, mTex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	mGLFW->checkError("createTexture");
 }

@@ -6,9 +6,11 @@
 #include "ppu.h"
 #include "pad.h"
 
+class Renderer;
+
 class NES {
 public:
-	NES();
+	NES(Renderer* renderer = 0);
 	virtual ~NES();
 
 public:
