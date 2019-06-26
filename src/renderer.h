@@ -5,6 +5,9 @@ class Renderer {
 public:
 	Renderer();
 	virtual ~Renderer();
+
+public:
+	virtual void render();
 };
 
 #endif
