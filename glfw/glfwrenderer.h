@@ -5,6 +5,8 @@
 #include "renderer.h"
 #include "glfw.h"
 
+class PAD;
+
 class GLFWRenderer: public Renderer {
 public:
 	GLFWRenderer();
@@ -12,11 +14,15 @@ public:
 
 public:
 	virtual void render(const uint8_t* p);
+	virtual void bindPAD(PAD* pad) {
+		mPAD = pad;
+	}
 
 protected:
 	void createWindow();
 	void createObj();
 	void createTexture();
+	void setPAD();
 
 protected:
 	GLFW* mGLFW;
@@ -27,6 +33,7 @@ protected:
 	GLuint mTex;
 
 	uint8_t* mPix;
+	PAD* mPAD;
 };
 
 #endif

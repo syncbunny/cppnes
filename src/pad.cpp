@@ -19,20 +19,28 @@ uint8_t PAD::in1() {
 
 	switch(mInCount1) {
 	case 0: // A
+		if (mA[0]) ret = 1;
 		break;
 	case 1: // B
+		if (mB[0]) ret = 1;
 		break;
 	case 2: // Select
+		if (mSelect[0]) ret = 1;
 		break;
 	case 3: // Start
+		if (mStart[0]) ret = 1;
 		break;
 	case 4: // Up
+		if (mUp[0]) ret = 1;
 		break;
 	case 5: // Down
+		if (mDown[0]) ret = 1;
 		break;
 	case 6: // Left
+		if (mLeft[0]) ret = 1;
 		break;
 	case 7: // Right
+		if (mRight[0]) ret = 1;
 		break;
 	}
 
@@ -70,3 +78,4 @@ void PAD::resetIn() {
 	mInCount1 = 0;
 	mInCount2 = 0;
 }
+

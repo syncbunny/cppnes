@@ -18,6 +18,9 @@ public:
 	void powerOn();
 	void reset();
 	void clock();
+	PAD* getPAD() {
+		return mPAD;
+	}
 
 protected:
 	bool cartridgeHasTrainer();

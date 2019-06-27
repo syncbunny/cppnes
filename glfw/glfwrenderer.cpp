@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "glfwrenderer.h"
+#include "pad.h"
 
 GLFWRenderer::GLFWRenderer()
 :Renderer(), mGLFW(0), mWindow(0) {
@@ -11,6 +12,7 @@ GLFWRenderer::GLFWRenderer()
 	createObj();
 	createTexture();
 	mProg = mGLFW->createProgcamFromFile("base.vs", "base.fs");
+	mPAD = 0;
 }
 
 GLFWRenderer::~GLFWRenderer() {
@@ -24,13 +26,11 @@ void GLFWRenderer::render(const uint8_t* p) {
 
 	glBindTexture(GL_TEXTURE_2D, mTex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(mProg);
 
 	glBindVertexArray(mVAO);
-	glBindTexture(GL_TEXTURE_2D, mTex);
 	mGLFW->checkError("glBindTexture");
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	mGLFW->checkError("DrawArrays");
@@ -39,7 +39,8 @@ void GLFWRenderer::render(const uint8_t* p) {
 
 	glfwSwapBuffers(mWindow);
 	glfwPollEvents();
-	mGLFW->checkError("glfwWaitEent");
+	
+	this->setPAD();
 
 	mGLFW->checkError();
 }
@@ -97,4 +98,12 @@ void GLFWRenderer::createTexture() {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, mPix);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	mGLFW->checkError("createTexture");
+}
+
+void GLFWRenderer::setPAD() {
+	if (mPAD == 0) {
+		return;
+	}
+
+	mPAD->setStart(0, glfwGetKey(mWindow, GLFW_KEY_ENTER));
 }
