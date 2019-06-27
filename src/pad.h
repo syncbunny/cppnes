@@ -17,32 +17,32 @@ public:
 		if (n == 1) mA[1] = b;
 	}
 	virtual void setB(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mB[0] = b;
+		if (n == 1) mB[1] = b;
 	}
 	virtual void setSelect(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mSelect[0] = b;
+		if (n == 1) mSelect[1] = b;
 	}
 	virtual void setStart(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mStart[0] = b;
+		if (n == 1) mStart[1] = b;
 	}
 	virtual void setUp(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mUp[0] = b;
+		if (n == 1) mUp[1] = b;
 	}
 	virtual void setDown(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mDown[0] = b;
+		if (n == 1) mDown[1] = b;
 	}
 	virtual void setLeft(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mLeft[0] = b;
+		if (n == 1) mLeft[1] = b;
 	}
 	virtual void setRight(int n, bool b) {
-		if (n == 0) mA[0] = b;
-		if (n == 1) mA[1] = b;
+		if (n == 0) mRight[0] = b;
+		if (n == 1) mRight[1] = b;
 	}
 
 protected:

@@ -7,10 +7,14 @@
 #include "pad.h"
 
 Mapper::Mapper()
-:mNo(0){
+:mNo(0), mPROM(0){
+	mPROM = new uint8_t[0x8000]; // 32k bytes
 }
 
 Mapper::~Mapper() {
+	if (mPROM) {
+		delete[] mPROM;
+	}
 }
 
 void Mapper::setWRAM(uint8_t* base) {
@@ -18,7 +22,13 @@ void Mapper::setWRAM(uint8_t* base) {
 }
 
 void Mapper::setPROM(uint8_t* base, size_t size) {
-	mPROM = base;
+	if (size == 0x4000) {
+		memcpy(&mPROM[0x4000], base, size);
+	} else if (size == 0x8000) {
+		memcpy(&mPROM[0x0000], base, size);
+	} else {
+		throw std::runtime_error("invalid PRPOM Size");
+	}
 }
 
 void Mapper::setCROM(uint8_t* base, size_t size) {

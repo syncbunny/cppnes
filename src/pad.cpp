@@ -1,7 +1,16 @@
+#include <iostream>
 #include "pad.h"
 
 PAD::PAD()
 :mLastOut(0xFF), mInCount1(0), mInCount2(0) {
+	mA[0]      = mA[1]      = false;
+	mB[0]      = mB[1]      = false;
+	mSelect[0] = mSelect[1] = false;
+	mStart[0]  = mStart[1]  = false;
+	mUp[0]     = mUp[1]     = false;
+	mDown[0]   = mDown[1]   = false;
+	mLeft[0]   = mLeft[1]   = false;
+	mRight[0]  = mRight[1]  = false;
 }
 
 PAD::~PAD() {
@@ -43,6 +52,7 @@ uint8_t PAD::in1() {
 		if (mRight[0]) ret = 1;
 		break;
 	}
+	std::cout << "PAD: incount=" << (int)mInCount1 << ", ret=" << (int)ret << std::endl;
 
 	mInCount1++;
 	return ret;
