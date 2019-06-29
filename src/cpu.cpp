@@ -54,7 +54,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define STA(addr) (mMapper->write1Byte(addr, mA))
 #define STX(addr) (mMapper->write1Byte(addr, mX))
 #define STY(addr) (mMapper->write1Byte(addr, mY))
-#define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
+#define INC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
+#define DEC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define EOR(addr) (mA ^= mMapper->read1Byte(addr), UPDATE_NZ(mA))
@@ -63,6 +64,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), _mem &= mA, UPDATE_Z(_mem), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0)
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
@@ -96,6 +98,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define TXA() (mA = mX, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 #define TXS() (mS = mX) // No flag update
+#define TSX() (mX = mX, UPDATE_NZ(mS))
 
 #define IMM() (mPC++)
 #define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -199,6 +202,9 @@ void CPU::clock() {
 	case 0x0A: // ASL Accumulator
 		ASL_A();
 		break;
+	case 0x0D: // ORA Absolute
+		ORA(ABS());
+		break;
 	case 0x10: // BPL Relative
 		BPL(REL());
 		break;
@@ -222,6 +228,9 @@ void CPU::clock() {
 		break;
 	case 0x2A: // ROL Accumulator
 		ROL_A();
+		break;
+	case 0x2C: // BIT Absolute
+		BIT(ABS());
 		break;
 	case 0x30: // BMI Relative
 		BMI(REL());
@@ -358,6 +367,9 @@ void CPU::clock() {
 	case 0xB9: // LDA Absolute,Y
 		LDA(ABS_IND(mY));
 		break;
+	case 0xBA: // TSX Implied
+		TSX();
+		break;
 	case 0xBD: // LDA Absolute,X
 		LDA(ABS_IND(mX));
 		break;
@@ -366,6 +378,9 @@ void CPU::clock() {
 		break;
 	case 0xC5: // CMP ZeroPage
 		CMP(ZERO_PAGE(mPC));
+		break;
+	case 0xC6: // DEC ZeroPage
+		DEC(ZERO_PAGE(mPC));
 		break;
 	case 0xC8: // INY Implied
 		INY();
