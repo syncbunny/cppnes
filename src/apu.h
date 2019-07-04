@@ -15,6 +15,12 @@ public:
 	virtual void setSW1C2(uint8_t val) {
 		mSW1C2 = val;
 	}
+	virtual void setSW1FQ1(uint8_t val) {
+		mSW1FQ1 = val;
+	}
+	virtual void setSW1FQ2(uint8_t val) {
+		mSW1FQ1 = val;
+	}
 	virtual void setDMC1(uint8_t val) {
 		mDMC1 = val;
 	}
@@ -30,7 +36,8 @@ public:
 
 protected:
 	uint8_t mSW1C1;        // 0x4000
-	uint8_t mSW1C2;        // 0x4000
+	uint8_t mSW1C2;        // 0x4001
+	uint8_t mSW1FQ1;       // 0x4002
 	uint8_t mDMC1;         // 0x4010
 	uint8_t mDMC2;         // 0x4011
 	uint8_t mChCtrl;

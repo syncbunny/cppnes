@@ -65,6 +65,14 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPPU->setWriteAddr(val);
 	} else if (addr == 0x2007) {
 		mPPU->write(val);
+	} else if (addr == 0x4000) {
+		mAPU->setSW1C1(val);
+	} else if (addr == 0x4001) {
+		mAPU->setSW1C2(val);
+	} else if (addr == 0x4002) {
+		mAPU->setSW1FQ1(val);
+	} else if (addr == 0x4003) {
+		mAPU->setSW1FQ2(val);
 	} else if (addr == 0x4010) {
 		mAPU->setDMC1(val);
 	} else if (addr == 0x4011) {
