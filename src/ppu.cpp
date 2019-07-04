@@ -73,6 +73,8 @@ PPU::PPU()
 	mFrames = 0;
 	mWriteMode = 0;
 	mRenderer = 0;
+	mWriteAddr = 0;
+	mSpriteMemAddr = 0;
 }
 
 PPU::~PPU() {
@@ -98,6 +100,15 @@ void PPU::clock() {
 			mFrames++;
 		}
 	}
+}
+
+void PPU::setSpriteMemAddr(uint8_t a) {
+	mSpriteMemAddr = a;
+}
+
+void PPU::setSpriteMemVal(uint8_t v) {
+	mSpriteMem[mSpriteMemAddr] = v;
+	mSpriteMemAddr++;
 }
 
 void PPU::setScroll(uint8_t val) {

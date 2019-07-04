@@ -59,6 +59,10 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPPU->setCR1(val);
 	} else if (addr == 0x2001) {
 		mPPU->setCR2(val);
+	} else if (addr == 0x2003) {
+		mPPU->setSpriteMemAddr(val);
+	} else if (addr == 0x2004) {
+		mPPU->setSpriteMemVal(val);
 	} else if (addr == 0x2005) {
 		mPPU->setScroll(val);
 	} else if (addr == 0x2006) {

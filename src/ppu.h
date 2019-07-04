@@ -44,6 +44,8 @@ public:
 	virtual uint8_t* getMemory() {
 		return mMem;
 	}
+	virtual void setSpriteMemAddr(uint8_t a);
+	virtual void setSpriteMemVal(uint8_t v);
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
 	virtual void write(uint8_t val);
@@ -64,6 +66,7 @@ protected:
 	uint8_t mSR;  // Status Register
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
+	uint8_t mSpriteMemAddr;
 	uint8_t mScrollX;
 	uint8_t mScrollY;
 	uint8_t mMirror;
