@@ -17,15 +17,17 @@ PAD::~PAD() {
 }
 
 void PAD::out(uint8_t val) {
+	val &= 0x01;
 	if (mLastOut == 0x01 && val == 0x00) {
+		this->strobe();
 		this->resetIn();
 	}
+
 	mLastOut = val;
 }
 
 uint8_t PAD::in1() {
 	uint8_t ret = 0;
-
 	switch(mInCount1) {
 	case 0: // A
 		if (mA[0]) ret = 1;
@@ -52,9 +54,11 @@ uint8_t PAD::in1() {
 		if (mRight[0]) ret = 1;
 		break;
 	}
-	std::cout << "PAD: incount=" << (int)mInCount1 << ", ret=" << (int)ret << std::endl;
+	ret |= 0x40;
 
 	mInCount1++;
+	mInCount1 %=8;
+
 	return ret;
 }
 
@@ -81,7 +85,19 @@ uint8_t PAD::in2() {
 	}
 
 	mInCount2++;
+	mInCount2 %= 8;
 	return ret;
+}
+
+void PAD::strobe() {
+	mA[0]      = mA_[0];
+	mB[0]      = mB_[0];
+	mSelect[0] = mSelect_[0];
+	mStart[0]  = mStart_[0];
+	mUp[0]     = mUp_[0];
+	mDown[0]   = mDown_[0];
+	mLeft[0]   = mLeft_[0];
+	mRight[0]  = mRight_[0];
 }
 
 void PAD::resetIn() {
