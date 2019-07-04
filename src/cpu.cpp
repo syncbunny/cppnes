@@ -64,7 +64,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
-#define BIT(addr) (_mem = mMapper->read1Byte(addr), _mem &= mA, UPDATE_Z(_mem), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0)
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0, _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
