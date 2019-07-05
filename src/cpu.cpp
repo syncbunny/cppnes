@@ -288,6 +288,9 @@ void CPU::clock() {
 	case 0x6A: // ROR Accumulator
 		ROR_A();
 		break;
+	case 0x6C: // JMP Indirect
+		JMP(INDIRECT(ABS()));
+		break;
 	case 0x75: // ADC Immediate
 		ADC(ZERO_PAGE_IND(mX));
 		break;
