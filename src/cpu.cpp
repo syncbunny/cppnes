@@ -13,6 +13,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define FLG_I (0x04)
 #define FLG_D (0x08)
 #define FLG_B (0x10)
+#define FLG_5 (0x20)
 #define FLG_V (0x40)
 #define FLG_N (0x80)
 #define IFLG_C (0xFE)
@@ -75,7 +76,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
-#define PHP() (PUSH(mP))
+#define PHP() (SET_B(), PUSH(mP))
 #define PLP() (mP=POP())
 #define INX() (mX++, UPDATE_NZ(mX))
 #define INY() (mY++, UPDATE_NZ(mY))
@@ -454,6 +455,7 @@ void CPU::clock() {
 		break;
 	}
 	mClockRemain = clockTable[o];
+	mP |= FLG_5; // bit5 is always '1'
 	this->dump();
 }
 
