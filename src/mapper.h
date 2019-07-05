@@ -1,6 +1,7 @@
 #ifndef MAPPER_H
 #define MAPPER_H
 
+#include <cstddef>
 #include <cstdint>
 
 class Mapper {
@@ -10,7 +11,11 @@ public:
 
 public:
 	virtual void setWRAM(uint8_t* addr);
+	virtual void setERAM(uint8_t* addr);
 	virtual void setPROM(uint8_t* addr, size_t size);
+	virtual uint8_t* getPROM() {
+		return mPROM;
+	}
 	virtual void setCROM(uint8_t* addr, size_t size);
 	virtual void setPPU(class PPU* ppu);
 	virtual void setAPU(class APU* apu);
@@ -30,6 +35,7 @@ protected:
 protected:
 	uint8_t mNo;
 	uint8_t* mWRAM;
+	uint8_t* mERAM;
 	uint8_t* mPROM;
 	uint8_t* mCROM;
 	class PPU* mPPU;

@@ -29,8 +29,8 @@
 #define FLAG7_MAPPER_HIGH  (0xF0)
 
 NES::NES(Renderer* r) {
-	//mMapper = new VMapper();
-	mMapper = new Mapper();
+	mMapper = new VMapper();
+	//mMapper = new Mapper();
 	mCPU = new CPU(mMapper);
 	mPPU = new PPU();
 	//mPPU = new VPPU();

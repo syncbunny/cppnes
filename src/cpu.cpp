@@ -11,12 +11,15 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define FLG_C (0x01)
 #define FLG_Z (0x02)
 #define FLG_I (0x04)
+#define FLG_D (0x08)
 #define FLG_B (0x10)
+#define FLG_5 (0x20)
 #define FLG_V (0x40)
 #define FLG_N (0x80)
 #define IFLG_C (0xFE)
 #define IFLG_Z (0xFD)
 #define IFLG_I (0xFB)
+#define IFLG_D (0xF7)
 #define IFLG_B (0xEF)
 #define IFLG_V (0xBF)
 #define IFLG_N (0x7F)
@@ -24,13 +27,15 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define IFLG_VC (0xBE)
 
 #define SET_C() (mP |= FLG_C)
-#define SET_I() (mP |= FLG_I)
 #define SET_Z() (mP |= FLG_Z)
+#define SET_I() (mP |= FLG_I)
+#define SET_D() (mP |= FLG_D)
 #define SET_B() (mP |= FLG_B)
 #define SET_N() (mP |= FLG_N)
 #define UNSET_C() (mP &= IFLG_C)
-#define UNSET_I() (mP &= IFLG_I)
 #define UNSET_Z() (mP &= IFLG_Z)
+#define UNSET_I() (mP &= IFLG_I)
+#define UNSET_D() (mP &= IFLG_D)
 #define CLEAR_B() (mP &= IFLG_B)
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
@@ -50,13 +55,17 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define STA(addr) (mMapper->write1Byte(addr, mA))
 #define STX(addr) (mMapper->write1Byte(addr, mX))
 #define STY(addr) (mMapper->write1Byte(addr, mY))
-#define INC(addr) (_zpaddr = addr, mMapper->write1Byte(_zpaddr, _mem = (mMapper->read1Byte(_zpaddr)+1)), UPDATE_NZ(_mem))
+#define INC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
+#define DEC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
+#define EOR(addr) (mA ^= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ADC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, mP&=IFLG_VC, _A_Pvc=mADC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP|=_A_Pvc.p_vc, UPDATE_NZ(mA))
 #define SBC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, mP&=IFLG_VC, _A_Pvc=mSBC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP|=_A_Pvc.p_vc, UPDATE_NZ(mA))
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
+#define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0, _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
@@ -67,14 +76,18 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
+#define PHP() (SET_B(), PUSH(mP))
+#define PLP() (mP=POP())
 #define INX() (mX++, UPDATE_NZ(mX))
 #define INY() (mY++, UPDATE_NZ(mY))
 #define DEX() (mX--, UPDATE_NZ(mX))
 #define DEY() (mY--, UPDATE_NZ(mY))
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), mA<<=1,UPDATE_NZ(mA))
+#define ASL(addr) (_mem = mMapper->read1Byte(addr), (_mem&0x80)? SET_C():UNSET_C(), _mem<<= 1, mMapper->write1Byte(addr, _mem), UPDATE_NZ(_mem))
 #define LSR_A() ((mA&0x01)? SET_C():UNSET_C(), mA>>=1,UPDATE_NZ(mA))
 #define ROL_A() (_a=mA, mA<<=1, mA|=(mP&FLG_C)? 0x01:0x00, (_a&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROR_A() (_a=mA, mA>>=1, mA|=(mP&FLG_C)? 0x80:0x00, (_a&0x01)? SET_C():UNSET_C(), UPDATE_NZ(mA))
+#define ROL(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem<<=1, _mem|=(mP&FLG_C)? 0x01:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x80)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
 #define ROR(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem>>=1, _mem|=(mP&FLG_C)? 0x80:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x01)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
 #define RTS() (mPC = POP2(), mPC+=1)
 #define RTI() (mP = POP(), mPC = POP2())
@@ -82,10 +95,13 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define SEI() (SET_I())
 #define CLC() (UNSET_C())
 #define CLI() (UNSET_I())
+#define CLD() (UNSET_D())
 #define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TAX() (mX = mA, UPDATE_NZ(mX))
+#define TXA() (mA = mX, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 #define TXS() (mS = mX) // No flag update
+#define TSX() (mX = mX, UPDATE_NZ(mS))
 
 #define IMM() (mPC++)
 #define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -94,9 +110,6 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define REL() (_mem=mMapper->read1Byte(mPC), mPC+1+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_IND(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
-#if 0
-#define INDIRECT(x) (mMapper->read2BytesLE((x)))
-#endif
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
@@ -180,11 +193,20 @@ void CPU::clock() {
 	case 0x05: // ORA ZeroPage
 		ORA(ZERO_PAGE(mPC));
 		break;
+	case 0x06: // ASL ZeroPage
+		ASL(ZERO_PAGE(mPC));
+		break;
+	case 0x08: // PHP Implied
+		PHP();
+		break;
 	case 0x09: // ORA Immediate
 		ORA(IMM());
 		break;
 	case 0x0A: // ASL Accumulator
 		ASL_A();
+		break;
+	case 0x0D: // ORA Absolute
+		ORA(ABS());
 		break;
 	case 0x10: // BPL Relative
 		BPL(REL());
@@ -198,11 +220,26 @@ void CPU::clock() {
 	case 0x20: // JSR Absolute
 		JSR(ABS());
 		break;
+	case 0x24: // BIT ZeroPage
+		BIT(ZERO_PAGE(mPC));
+		break;
+	case 0x25: // AND ZeroPage
+		AND(ZERO_PAGE(mPC));
+		break;
+	case 0x26: // ROL ZeroPage 
+		AND(ZERO_PAGE(mPC));
+		break;
+	case 0x28: // PLP Implied
+		PLP();
+		break;
 	case 0x29: // AND Immediate 
 		AND(IMM());
 		break;
 	case 0x2A: // ROL Accumulator
 		ROL_A();
+		break;
+	case 0x2C: // BIT Absolute
+		BIT(ABS());
 		break;
 	case 0x30: // BMI Relative
 		BMI(REL());
@@ -213,8 +250,14 @@ void CPU::clock() {
 	case 0x40: // RTI Implied
 		RTI();
 		break;
+	case 0x45: // EOR ZeroPage
+		EOR(ZERO_PAGE(mPC));
+		break;
 	case 0x48: // PHA Implied
 		PHA();
+		break;
+	case 0x49: // EOR Immediate
+		EOR(IMM());
 		break;
 	case 0x4A: // LSR Accumulator
 		LSR_A();
@@ -227,6 +270,9 @@ void CPU::clock() {
 		break;
 	case 0x60: // RTS Implied
 		RTS();
+		break;
+	case 0x61: // ADC Indirect,X
+		ADC(INDIRECT(ZERO_PAGE_IND(mX)));
 		break;
 	case 0x65: // ADC ZeroPage
 		ADC(ZERO_PAGE(mPC));
@@ -242,6 +288,9 @@ void CPU::clock() {
 		break;
 	case 0x6A: // ROR Accumulator
 		ROR_A();
+		break;
+	case 0x6C: // JMP Indirect
+		JMP(INDIRECT(ABS()));
 		break;
 	case 0x75: // ADC Immediate
 		ADC(ZERO_PAGE_IND(mX));
@@ -261,8 +310,17 @@ void CPU::clock() {
 	case 0x88: // DEY Implied
 		DEY();
 		break;
+	case 0x8A: // TXA Implied
+		TXA();
+		break;
+	case 0x8C: // STY Absolute
+		STY(ABS());
+		break;
 	case 0x8D: // STA Absolute
 		STA(ABS());
+		break;
+	case 0x8E: // STX Absolute
+		STX(ABS());
 		break;
 	case 0x90: // BCC Relative 
 		BCC(REL());
@@ -312,8 +370,14 @@ void CPU::clock() {
 	case 0xAA: // TAX Implied
 		TAX();
 		break;
+	case 0xAC: // LDY Absolute
+		LDY(ABS());
+		break;
 	case 0xAD: // LDA Absolute
 		LDA(ABS());
+		break;
+	case 0xAE: // LDX Absolute
+		LDX(ABS());
 		break;
 	case 0xB0: // BCS Relative
 		BCS(REL());
@@ -327,11 +391,23 @@ void CPU::clock() {
 	case 0xB9: // LDA Absolute,Y
 		LDA(ABS_IND(mY));
 		break;
+	case 0xBA: // TSX Implied
+		TSX();
+		break;
 	case 0xBD: // LDA Absolute,X
 		LDA(ABS_IND(mX));
 		break;
 	case 0xC0: // CPY Immediate
 		CPY(IMM());
+		break;
+	case 0xC4: // CPY ZeroPage
+		CPY(ZERO_PAGE(mPC));
+		break;
+	case 0xC5: // CMP ZeroPage
+		CMP(ZERO_PAGE(mPC));
+		break;
+	case 0xC6: // DEC ZeroPage
+		DEC(ZERO_PAGE(mPC));
 		break;
 	case 0xC8: // INY Implied
 		INY();
@@ -347,6 +423,12 @@ void CPU::clock() {
 		break;
 	case 0xD1: // CMP Indirect,Y
 		CMP(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		break;
+	case 0xD8: // CLD Implied
+		CLD();
+		break;
+	case 0xE0: // CPX Immediate
+		CPX(IMM());
 		break;
 	case 0xE6: // INC ZeroPage
 		INC(ZERO_PAGE(mPC));
@@ -373,6 +455,7 @@ void CPU::clock() {
 		break;
 	}
 	mClockRemain = clockTable[o];
+	mP |= FLG_5; // bit5 is always '1'
 	this->dump();
 }
 

@@ -7,18 +7,32 @@
 #include "pad.h"
 
 Mapper::Mapper()
-:mNo(0){
+:mNo(0), mERAM(0), mPROM(0){
+	mPROM = new uint8_t[0x8000]; // 32k bytes
 }
 
 Mapper::~Mapper() {
+	if (mPROM) {
+		delete[] mPROM;
+	}
 }
 
 void Mapper::setWRAM(uint8_t* base) {
 	mWRAM = base;
 }
 
+void Mapper::setERAM(uint8_t* base) {
+	mERAM = base;
+}
+
 void Mapper::setPROM(uint8_t* base, size_t size) {
-	mPROM = base;
+	if (size == 0x4000) {
+		memcpy(&mPROM[0x4000], base, size);
+	} else if (size == 0x8000) {
+		memcpy(&mPROM[0x0000], base, size);
+	} else {
+		throw std::runtime_error("invalid PRPOM Size");
+	}
 }
 
 void Mapper::setCROM(uint8_t* base, size_t size) {
@@ -49,16 +63,58 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPPU->setCR1(val);
 	} else if (addr == 0x2001) {
 		mPPU->setCR2(val);
+	} else if (addr == 0x2003) {
+		mPPU->setSpriteMemAddr(val);
+	} else if (addr == 0x2004) {
+		mPPU->setSpriteMemVal(val);
 	} else if (addr == 0x2005) {
 		mPPU->setScroll(val);
 	} else if (addr == 0x2006) {
 		mPPU->setWriteAddr(val);
 	} else if (addr == 0x2007) {
 		mPPU->write(val);
+	} else if (addr == 0x4000) {
+		mAPU->setSW1C1(val);
+	} else if (addr == 0x4001) {
+		mAPU->setSW1C2(val);
+	} else if (addr == 0x4002) {
+		mAPU->setSW1FQ1(val);
+	} else if (addr == 0x4003) {
+		mAPU->setSW1FQ2(val);
+	} else if (addr == 0x4004) {
+		mAPU->setSW2C1(val);
+	} else if (addr == 0x4005) {
+		mAPU->setSW2C2(val);
+	} else if (addr == 0x4006) {
+		mAPU->setSW2FQ1(val);
+	} else if (addr == 0x4007) {
+		mAPU->setSW2FQ2(val);
+	} else if (addr == 0x4008) {
+		mAPU->setTWC(val);
+	} else if (addr == 0x4009) {
+		// unused
+	} else if (addr == 0x400A) {
+		mAPU->setTWFQ1(val);
+	} else if (addr == 0x400B) {
+		mAPU->setTWFQ2(val);
+	} else if (addr == 0x400C) {
+		mAPU->setNZC(val);
+	} else if (addr == 0x400D) {
+		// unused
+	} else if (addr == 0x400E) {
+		mAPU->setNZFQ1(val);
+	} else if (addr == 0x400F) {
+		mAPU->setNZFQ2(val);
 	} else if (addr == 0x4010) {
 		mAPU->setDMC1(val);
 	} else if (addr == 0x4011) {
 		mAPU->setDMC2(val);
+	} else if (addr == 0x4012) {
+		mAPU->setDMC3(val);
+	} else if (addr == 0x4013) {
+		mAPU->setDMC4(val);
+	} else if (addr == 0x4014) {
+		this->startDMA(val);
 	} else if (addr == 0x4014) {
 		this->startDMA(val);
 	} else if (addr == 0x4015) {
@@ -67,6 +123,10 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mPAD->out(val);
 	} else if (addr == 0x4017) {
 		mAPU->setFrameCounter(val);
+	} else if (addr >= 0x6000 && addr <= 0x7FFF) {
+		if (mERAM) {
+			mERAM[addr-0x6000] = val;
+		}
 	} else {
 		char msg[1024];
 		sprintf(msg, "Mapper::write1Byte: unmapped address(%04x)", addr);
