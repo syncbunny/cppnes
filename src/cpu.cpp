@@ -75,6 +75,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
+#define PHP() (PUSH(mP))
+#define PLP() (mP=POP())
 #define INX() (mX++, UPDATE_NZ(mX))
 #define INY() (mY++, UPDATE_NZ(mY))
 #define DEX() (mX--, UPDATE_NZ(mX))
@@ -107,9 +109,6 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define REL() (_mem=mMapper->read1Byte(mPC), mPC+1+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_IND(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
-#if 0
-#define INDIRECT(x) (mMapper->read2BytesLE((x)))
-#endif
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
@@ -196,6 +195,9 @@ void CPU::clock() {
 	case 0x06: // ASL ZeroPage
 		ASL(ZERO_PAGE(mPC));
 		break;
+	case 0x08: // PHP Implied
+		PHP();
+		break;
 	case 0x09: // ORA Immediate
 		ORA(IMM());
 		break;
@@ -217,11 +219,17 @@ void CPU::clock() {
 	case 0x20: // JSR Absolute
 		JSR(ABS());
 		break;
+	case 0x24: // BIT ZeroPage
+		BIT(ZERO_PAGE(mPC));
+		break;
 	case 0x25: // AND ZeroPage
 		AND(ZERO_PAGE(mPC));
 		break;
 	case 0x26: // ROL ZeroPage 
 		AND(ZERO_PAGE(mPC));
+		break;
+	case 0x28: // PLP Implied
+		PLP();
 		break;
 	case 0x29: // AND Immediate 
 		AND(IMM());
@@ -247,6 +255,9 @@ void CPU::clock() {
 	case 0x48: // PHA Implied
 		PHA();
 		break;
+	case 0x49: // EOR Immediate
+		EOR(IMM());
+		break;
 	case 0x4A: // LSR Accumulator
 		LSR_A();
 		break;
@@ -258,6 +269,9 @@ void CPU::clock() {
 		break;
 	case 0x60: // RTS Implied
 		RTS();
+		break;
+	case 0x61: // ADC Indirect,X
+		ADC(INDIRECT(ZERO_PAGE_IND(mX)));
 		break;
 	case 0x65: // ADC ZeroPage
 		ADC(ZERO_PAGE(mPC));
@@ -352,8 +366,14 @@ void CPU::clock() {
 	case 0xAA: // TAX Implied
 		TAX();
 		break;
+	case 0xAC: // LDY Absolute
+		LDY(ABS());
+		break;
 	case 0xAD: // LDA Absolute
 		LDA(ABS());
+		break;
+	case 0xAE: // LDX Absolute
+		LDX(ABS());
 		break;
 	case 0xB0: // BCS Relative
 		BCS(REL());
@@ -375,6 +395,9 @@ void CPU::clock() {
 		break;
 	case 0xC0: // CPY Immediate
 		CPY(IMM());
+		break;
+	case 0xC4: // CPY ZeroPage
+		CPY(ZERO_PAGE(mPC));
 		break;
 	case 0xC5: // CMP ZeroPage
 		CMP(ZERO_PAGE(mPC));
