@@ -203,7 +203,7 @@ void PPU::renderBG(int x, int y) {
 	if (addr == this->mLastBGNameTableAddr) {
 		paletteP = mLastPaletteP;
 	} else {
-		paletteP = this->getPalette(bpTable, u, v);
+		paletteP = this->getPalette(&mMem[nameTableBase[nameTableId]], u, v);
 	}
 	this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3]);
 
@@ -291,7 +291,6 @@ void PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, u
  * v: [0 .. 29]
  */
 struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
-	printf("PPU::getPalette(%p, %d, %d)\n", base, u, v);
 	uint8_t* attrBase = base+0x03C0;
 	int attrU = u/4; // [0 .. 8]
 	int attrV = v/4; // [0 .. 8]

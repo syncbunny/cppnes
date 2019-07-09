@@ -83,7 +83,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define DEX() (mX--, UPDATE_NZ(mX))
 #define DEY() (mY--, UPDATE_NZ(mY))
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), mA<<=1,UPDATE_NZ(mA))
-#define ASL(addr) (_mem = mMapper->read1Byte(addr), (_mem&0x80)? SET_C():UNSET_C(), _mem<<= 1, mMapper->write1Byte(addr, _mem), UPDATE_NZ(_mem))
+#define ASL(addr) (_addr = addr, _mem = mMapper->read1Byte(_addr), (_mem&0x80)? SET_C():UNSET_C(), _mem<<= 1, mMapper->write1Byte(_addr, _mem), UPDATE_NZ(_mem))
 #define LSR_A() ((mA&0x01)? SET_C():UNSET_C(), mA>>=1,UPDATE_NZ(mA))
 #define ROL_A() (_a=mA, mA<<=1, mA|=(mP&FLG_C)? 0x01:0x00, (_a&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROR_A() (_a=mA, mA>>=1, mA|=(mP&FLG_C)? 0x80:0x00, (_a&0x01)? SET_C():UNSET_C(), UPDATE_NZ(mA))
@@ -105,11 +105,10 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 
 #define IMM() (mPC++)
 #define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
-#define ABS_IND(ind) (mPC+=2,mMapper->read2Bytes(mPC-2)+ind)
-#define ABS_IND_Y() (mPC=mPC+2, mMapper->read1Byte(mMapper->read2Bytes(mPC-2)+(uint16_t)mY))
+#define ABS_INDEXED(ind) (mPC+=2,mMapper->read2Bytes(mPC-2)+ind)
 #define REL() (_mem=mMapper->read1Byte(mPC), mPC+1+(int8_t)_mem)
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
-#define ZERO_PAGE_IND(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
+#define ZERO_PAGE_INDEXED(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
@@ -215,7 +214,7 @@ void CPU::clock() {
 		CLC();
 		break;
 	case 0x1D: // ORA Absolute,X
-		ORA(ABS_IND(mX));
+		ORA(ABS_INDEXED(mX));
 		break;
 	case 0x20: // JSR Absolute
 		JSR(ABS());
@@ -265,14 +264,20 @@ void CPU::clock() {
 	case 0x4C: // JMP Absolute
 		JMP(ABS());
 		break;
+	case 0x4D: // EOR Absolute
+		EOR(ABS());
+		break;
 	case 0x58: // CLI Implied
 		CLI();
+		break;
+	case 0x5D: // EOR Absolute,X
+		EOR(ABS_INDEXED(mX));
 		break;
 	case 0x60: // RTS Implied
 		RTS();
 		break;
 	case 0x61: // ADC Indirect,X
-		ADC(INDIRECT(ZERO_PAGE_IND(mX)));
+		ADC(INDIRECT(ZERO_PAGE_INDEXED(mX)));
 		break;
 	case 0x65: // ADC ZeroPage
 		ADC(ZERO_PAGE(mPC));
@@ -293,7 +298,7 @@ void CPU::clock() {
 		JMP(INDIRECT(ABS()));
 		break;
 	case 0x75: // ADC Immediate
-		ADC(ZERO_PAGE_IND(mX));
+		ADC(ZERO_PAGE_INDEXED(mX));
 		break;
 	case 0x78: // SEI Implied
 		SEI();
@@ -329,25 +334,25 @@ void CPU::clock() {
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
 	case 0x95: // STA ZeroPage,X
-		STA(ZERO_PAGE_IND(mX));
+		STA(ZERO_PAGE_INDEXED(mX));
 		break;
 	case 0x98: // TYA Implied
 		TYA();
 		break;
 	case 0x99: // STA Absolute,Y
-		STA(ABS_IND(mY));
+		STA(ABS_INDEXED(mY));
 		break;
 	case 0x9A: // TXS Implied
 		TXS();
 		break;
 	case 0x9D: // STA Absolute,X
-		STA(ABS_IND(mX));
+		STA(ABS_INDEXED(mX));
 		break;
 	case 0xA0: // LDY Immediate
 		LDY(IMM());
 		break;
 	case 0xA1: // LDA Indirect,X
-		LDA(INDIRECT(ZERO_PAGE_IND(mX)));
+		LDA(INDIRECT(ZERO_PAGE_INDEXED(mX)));
 		break;
 	case 0xA2: // LDX Immediate
 		LDX(IMM());
@@ -386,16 +391,16 @@ void CPU::clock() {
 		LDA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
 	case 0xB5: // LDA ZeroPage,X
-		LDA(ZERO_PAGE_IND( mX));
+		LDA(ZERO_PAGE_INDEXED( mX));
 		break;
 	case 0xB9: // LDA Absolute,Y
-		LDA(ABS_IND(mY));
+		LDA(ABS_INDEXED(mY));
 		break;
 	case 0xBA: // TSX Implied
 		TSX();
 		break;
 	case 0xBD: // LDA Absolute,X
-		LDA(ABS_IND(mX));
+		LDA(ABS_INDEXED(mX));
 		break;
 	case 0xC0: // CPY Immediate
 		CPY(IMM());
@@ -445,7 +450,7 @@ void CPU::clock() {
 		BEQ(REL());
 		break;
 	case 0xFD: // SBC Absolute,X
-		SBC(ABS_IND(mX));
+		SBC(ABS_INDEXED(mX));
 		break;
 	default:
 		dump();
