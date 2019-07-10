@@ -1,14 +1,15 @@
 CXX=clang++
-CXXFLAGS=-c -Wall -std=c++11 -O
+CXXFLAGS=-std=c++11 -c -I../src -Wall -O -DGL_SILENCE_DEPRECATION
 LD=clang++
 LDFLAGS=
-LIBS=
+LIBS=-lglfw -lGLEW
+FWS=-framework OpenGL -framework CoreVideo -framework IOKit -framework Cocoa
 
 TARGET=nes
-OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o renderer.o
+OBJS=main.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o renderer.o glfw.o glfwrenderer.o
 
 ${TARGET}:${OBJS}
-	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS}
+	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS} ${FWS}
 
 main.o:main.cpp cpu.h nes.h ppu.h apu.h mapper.h 
 	${CXX} ${CXXFLAGS} main.cpp
@@ -34,6 +35,10 @@ events.o: events.cpp events.h
 	${CXX} ${CXXFLAGS} events.cpp
 renderer.o: renderer.cpp renderer.h
 	${CXX} ${CXXFLAGS} renderer.cpp
+glfw.o: glfw.cpp glfw.h
+	${CXX} ${CXXFLAGS} glfw.cpp
+glfwrenderer.o: glfwrenderer.cpp glfwrenderer.h renderer.h glfw.h
+	${CXX} ${CXXFLAGS} glfwrenderer.cpp
 
 clean:
 	-rm -f ${TARGET} ${OBJS}
