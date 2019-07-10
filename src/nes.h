@@ -25,6 +25,7 @@ public:
 protected:
 	bool cartridgeHasTrainer();
 	uint8_t getMapperNo();
+	void dump6000();
 
 protected:
 	Mapper* mMapper;
@@ -33,6 +34,7 @@ protected:
 	APU* mAPU;
 	PAD* mPAD;
 	uint8_t* mWRAM;
+	uint8_t* mERAM;
 	unsigned char* mCartridgeMem;
 
 	int mDClockCPU;
