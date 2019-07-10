@@ -1,6 +1,14 @@
+#include <iostream>
+#include <fstream>
 #include <string>
-#include <unistd.h>
+#include <vector>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include "glfwrenderer.h"
 #include "nes.h"
+#include "pad.h"
+
+#define GL_SILENCE_DEPRECATION 1
 
 struct Config {
 	std::string romPath;
@@ -15,15 +23,17 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	NES* nes = new NES();
+	GLFWRenderer* renderer = new GLFWRenderer();
+	NES* nes = new NES(renderer);
+	renderer->bindPAD(nes->getPAD());
 
 	nes->powerOn();
 	nes->loadCartridge(conf.romPath.c_str());
 	nes->reset();
+
 	while(true) {
 		nes->clock();
 	}
-
 	return 0;
 }
 

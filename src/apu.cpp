@@ -5,3 +5,6 @@ APU::APU() {
 
 APU::~APU() {
 }
+
+void APU::clock() {
+}

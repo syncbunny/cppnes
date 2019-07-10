@@ -164,6 +164,8 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2002) {
 		ret = mPPU->getSR();
+	} else if (addr == 0x4015) {
+		ret = mAPU->getChCtrl();
 	} else if (addr == 0x4016) {
 		ret = mPAD->in1();
 	} else if (addr == 0x4017) {

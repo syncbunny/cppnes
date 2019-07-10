@@ -45,7 +45,11 @@ NES::NES(Renderer* r) {
 		mPPU->bindRenderer(r);
 	}
 	mWRAM = new uint8_t[0x0800];
+	for (int i = 0; i < 0x0800; i++) mWRAM[i] = 0x4F;
+	mERAM = new uint8_t[0x2000];
+	for (int i = 0; i < 0x2000; i++) mERAM[i] = '\0';
 	mMapper->setWRAM(mWRAM);
+	mMapper->setERAM(mERAM);
 	mMapper->setPPU(mPPU);
 	mMapper->setAPU(mAPU);
 	mMapper->setPAD(mPAD);
@@ -54,6 +58,9 @@ NES::NES(Renderer* r) {
 NES::~NES() {
 	if (mWRAM) {
 		delete[] mWRAM;
+	}
+	if (mERAM) {
+		delete[] mERAM;
 	}
 	delete mCPU;
 	delete mPPU;
@@ -140,7 +147,9 @@ void NES::clock() {
 
 	if (mDClockCPU == 0) {
 		mCPU->clock();
+		mAPU->clock();
 		mDClockCPU = 11;
+		this->dump6000();
 	} else {
 		mDClockCPU--;
 	}
@@ -168,4 +177,18 @@ uint8_t NES::getMapperNo() {
 	n |= (mCartridgeMem[6] & FLAG6_MAPPAER_LOW) >> 4;
 
 	return n;
+}
+
+void NES::dump6000() {
+	uint16_t addr = 0x6004;
+
+	putchar('[');
+	for (addr = 0x6004; addr < 0x8000; addr++) {
+		if (mWRAM[addr] == '\0') {
+			break;
+		}
+		putchar(mWRAM[addr]);
+	}
+	putchar(']');
+	putchar('\n');
 }
