@@ -21,7 +21,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 
 NESForTest::NESForTest()
 :NES(){
-	mMapper = new Mapper();
+	//mMapper = new Mapper();
+	mMapper = new VMapper();
 	mCPU = new CPU(mMapper);
 	mPPU = new PPU();
 	mAPU = new APU();
@@ -36,9 +37,8 @@ NESForTest::NESForTest()
 	mMapper->setPPU(mPPU);
 	mMapper->setAPU(mAPU);
 
-	mCROM = new uint8_t[32768];
-	mPROM = new uint8_t[8192];
-	mMapper->setPROM(mPROM, 31768);
+	mPROM = mMapper->getPROM();
+	mCROM = new uint8_t[8192];
 	mMapper->setCROM(mCROM, 8192);
 	mMapper->setNo(3);
 }
