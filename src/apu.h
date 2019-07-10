@@ -9,6 +9,7 @@ public:
 	virtual ~APU();
 
 public:
+	virtual void clock();
 	virtual void setSW1C1(uint8_t val) {
 		mSW1C1 = val;
 	}
@@ -69,6 +70,9 @@ public:
 	virtual void setFrameCounter(uint8_t val) {
 		mFrameCounter = val;
 	}
+	virtual uint8_t getChCtrl() const {
+		return mChCtrl;
+	}
 
 protected:
 	uint8_t mSW1C1;        // 0x4000
@@ -89,8 +93,10 @@ protected:
 	uint8_t mDMC2;         // 0x4011
 	uint8_t mDMC3;         // 0x4012
 	uint8_t mDMC4;         // 0x4013
-	uint8_t mChCtrl;
+	uint8_t mChCtrl;       // 0x4015
 	uint8_t mFrameCounter;
+
+	int mClockCounter;
 };
 
 #endif
