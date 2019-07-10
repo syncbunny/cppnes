@@ -1,5 +1,7 @@
+#include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include <stdio.h>
 #include "ppu.h"
 #include "events.h"
 #include "renderer.h"
@@ -22,7 +24,8 @@
 //  +-----------+-----------+
 //  | 0 ($2000) | 1 ($2400) |
 //  +-----------+-----------+
-#define PALETTE_BASE (0x3F00)
+#define BG_PALETTE_BASE (0x3F00)
+#define SPRITE_PALETTE_BASE (0x3F10)
 
 /* Status Register &H2002 */
 #define FLAG_VBLANK (0x80)
@@ -35,6 +38,12 @@
 #define CLEAR_VBLANK() (mSR &= IFLAG_VBLANK)
 #define SET_SP_HIT() (mSR |= FLAG_SP_HIT)
 #define CLEAR_SP_HIT() (mSR &= IFLAG_SP_HIT)
+
+#define SPRITE_ATTRIBUTE_FLIP_H (0x40)
+#define SPRITE_ATTRIBUTE_FLIP_V (0x80)
+#define STENCIL_BACK_SPRITE (1)
+#define STENCIL_BG (2)
+#define STENCIL_FRONT_SPRITE (3)
 
 const uint8_t colors[] = {
 	/* 00 */ 0x6b, 0x6b, 0x6b, 0x00, 0x10, 0x84, 0x08, 0x00, 0x8c, 0x42, 0x00, 0x7b,
@@ -68,6 +77,7 @@ PPU::PPU()
 	mMem = new uint8_t[0x4000];
 	mSpriteMem = new uint8_t[256];
 	mScreen = new uint8_t[256*240*3]; // RGB
+	mStencil = new uint8_t[256*240];
 	mLine = 0;
 	mLineClock = 0;
 	mFrames = 0;
@@ -84,6 +94,10 @@ PPU::~PPU() {
 }
 
 void PPU::clock() {
+	if (mLine == 0 && mLineClock == 0) {
+		this->frameStart();
+	}
+
 	mLineClock++;
 	this->renderBG(mLineClock, mLine);
 	if (mLineClock >= CLOCKS_PAR_LINE) {
@@ -161,6 +175,9 @@ void PPU::renderBG(int x, int y) {
 	if (x >= 256 || y >= 240) {
 		return;
 	}
+	if (mStencil[y*256 +x] > STENCIL_BG) {
+		return;
+	}
 
 	int xx = (x + mScrollX)%512; // [0 .. 512]
 	int yy = (y + mScrollY)%480; // [0 .. 512]
@@ -205,7 +222,9 @@ void PPU::renderBG(int x, int y) {
 	} else {
 		paletteP = this->getPalette(&mMem[nameTableBase[nameTableId]], u, v);
 	}
-	this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3]);
+	if (this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3])) {
+		mStencil[y*256 +x] = STENCIL_BG;
+	}
 
 	this->mLastPaletteP = paletteP;
 	this->mLastBGNameTableAddr = addr;
@@ -229,6 +248,9 @@ void PPU::renderSprite(int y) {
 			continue;
 		}
 		v = y+1 - sp->y;
+		if (sp->a & SPRITE_ATTRIBUTE_FLIP_V) {
+			v = 7-v;
+		}
 		uint8_t pat1 = spTable[sp->n*16 + v];
 		uint8_t pat2 = spTable[sp->n*16 + v + 8];
 		for (int x = 0; x < 256; x++) {
@@ -237,18 +259,29 @@ void PPU::renderSprite(int y) {
 			}
 			u = x - sp->x;
 			uint8_t u2 = u%8; // u2: 0 to 7
-			u2 = 7-u2;
+			if ((sp->a & SPRITE_ATTRIBUTE_FLIP_H) == 0) {
+				u2 = 7-u2;
+			}
 
 			// TODO: use color palette
 			uint8_t col = 0;
 			col |= (pat2 >> u2)&0x01; col <<= 1;
-			col |= (pat1 >> u2)&0x01; col <<= 6;
-			if (col != 0 && i == 0) {
+			col |= (pat1 >> u2)&0x01;;
+			if (col == 0) {
+				continue;
+			}
+			if (i == 0) {
 				SET_SP_HIT();
 			}
-			mScreen[((y+1)*256 +x)*3 +0] = col;
-			mScreen[((y+1)*256 +x)*3 +1] = col;
-			mScreen[((y+1)*256 +x)*3 +2] = col;
+			uint8_t attr = sp->a&0x03;
+			struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE + attr*4];
+			col = paletteP->col[col]; // [00 .. 3F]
+
+			mScreen[((y+1)*256 +x)*3 +0] = colors[col*3 +0];
+			mScreen[((y+1)*256 +x)*3 +1] = colors[col*3 +1];
+			mScreen[((y+1)*256 +x)*3 +2] = colors[col*3 +2];
+
+			mStencil[(y+1)*256+x] = STENCIL_FRONT_SPRITE;
 		}
 	}
 }
@@ -264,6 +297,7 @@ void PPU::startVR() {
 void PPU::frameStart() {
 	// TODO: fill with BG color
 	memset(mScreen, 0, 256*240*3);
+	memset(mStencil, 0, 256*240);
 }
 
 void PPU::frameEnd() {
@@ -272,7 +306,7 @@ void PPU::frameEnd() {
 	}
 }
 
-void PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t uu, uint8_t vv, uint8_t* rgb) {
+bool PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t uu, uint8_t vv, uint8_t* rgb) {
 	uu = 7-uu;
 	uint8_t pat1 = base[pat*16 + vv];
 	uint8_t pat2 = base[pat*16 + vv + 8];
@@ -281,9 +315,15 @@ void PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, u
 	col |= (pat1 >> uu)&0x01;
 	col = paletteP->col[col]; // [00 .. 3F]
 
+	if (col == 0) {
+		return false;
+	}
+
 	rgb[0] = colors[col*3 +0];
 	rgb[1] = colors[col*3 +1];
 	rgb[2] = colors[col*3 +2];
+
+	return true;
 }
 
 /*
@@ -295,13 +335,8 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 	int attrU = u/4; // [0 .. 8]
 	int attrV = v/4; // [0 .. 8]
 	uint8_t attr = attrBase[attrV*8 +attrU];
-#if 0
-	int attrUU = (u%4)/2; // [0 .. 1]
-	int attrVV = (v%4)/2; // [0 .. 1]
-#else
 	int attrUU = (u/2)%2; // [0 .. 1]
 	int attrVV = (v/2)%2; // [0 .. 1]
-#endif
 	int attrUUVV = attrVV*2 + attrUU; // [0 .. 3]
 	switch (attrUUVV) {
 	// break through
@@ -313,7 +348,7 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 		attr >>= 2;
 	}
 	attr = attr & 0x03; // [0 .. 3]
-	struct Palette *paletteP = (struct Palette*)&mMem[PALETTE_BASE + attr*4];
+	struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + attr*4];
 
 	return paletteP;
 }

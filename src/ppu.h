@@ -57,7 +57,7 @@ protected:
 	virtual void frameEnd();
 	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
-	virtual void getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t u, uint8_t v, uint8_t* rgb);
+	virtual bool getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t u, uint8_t v, uint8_t* rgb);
 	virtual struct Palette* getPalette(uint8_t* base, uint8_t x, uint8_t y);
 
 protected:
@@ -78,6 +78,7 @@ protected:
 	uint8_t* mMem;
 	uint8_t* mSpriteMem;
 	uint8_t* mScreen;
+	uint8_t* mStencil;
 
 	uint16_t mLastBGNameTableAddr;
 	struct Palette* mLastPaletteP;
