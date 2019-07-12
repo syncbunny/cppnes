@@ -69,6 +69,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0, _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
+#define BVC(addr) (mPC = ((mP&FLG_V)==0)? addr:mPC+1)
+#define BVS(addr) (mPC = ((mP&FLG_V)!=0)? addr:mPC+1)
 #define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
 #define BNE(addr) (mPC = ((mP&FLG_Z)==0)? addr:mPC+1)
 #define BEQ(addr) (mPC = ((mP&FLG_Z)!=0)? addr:mPC+1)
@@ -310,6 +312,9 @@ void CPU::clock() {
 	case 0x4E: // LSR Absolute
 		LSR(ABS());
 		break;
+	case 0x50: // BVC Relative
+		BVC(REL());
+		break;
 	case 0x55: // EOR ZeroPage,X
 		EOR(ZERO_PAGE_INDEXED(mX));
 		break;
@@ -358,6 +363,9 @@ void CPU::clock() {
 	case 0x6E: // ROR Absolute
 		ROR(ABS());
 		break;
+	case 0x70: // BVS Relative
+		BVS(REL());
+		break;
 	case 0x75: // ADC ZeroPage,X
 		ADC(ZERO_PAGE_INDEXED(mX));
 		break;
@@ -375,6 +383,9 @@ void CPU::clock() {
 		break;
 	case 0x7E: // ROR Absolute,X
 		ROR(ABS_INDEXED(mX));
+		break;
+	case 0x81: // STA Indirect,X
+		STA(INDIRECT(ZERO_PAGE_INDEXED(mX)));
 		break;
 	case 0x84: // STY ZeroPage
 		STY(ZERO_PAGE(mPC));
