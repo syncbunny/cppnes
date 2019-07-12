@@ -86,6 +86,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ASL_A() ((mA&0x80)? SET_C():UNSET_C(), mA<<=1,UPDATE_NZ(mA))
 #define ASL(addr) (_addr = addr, _mem = mMapper->read1Byte(_addr), (_mem&0x80)? SET_C():UNSET_C(), _mem<<= 1, mMapper->write1Byte(_addr, _mem), UPDATE_NZ(_mem))
 #define LSR_A() ((mA&0x01)? SET_C():UNSET_C(), mA>>=1,UPDATE_NZ(mA))
+#define LSR(addr) (_addr = addr, _mem = mMapper->read1Byte(_addr), (_mem&0x01)? SET_C():UNSET_C(), _mem>>= 1, mMapper->write1Byte(_addr, _mem), UPDATE_NZ(_mem))
 #define ROL_A() (_a=mA, mA<<=1, mA|=(mP&FLG_C)? 0x01:0x00, (_a&0x80)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROR_A() (_a=mA, mA>>=1, mA|=(mP&FLG_C)? 0x80:0x00, (_a&0x01)? SET_C():UNSET_C(), UPDATE_NZ(mA))
 #define ROL(addr) (_addr=addr,_mem=mMapper->read1Byte(_addr), _mem2=_mem, _mem<<=1, _mem|=(mP&FLG_C)? 0x01:0x00, mMapper->write1Byte(_addr, _mem), (_mem2&0x80)? SET_C():UNSET_C(), UPDATE_NZ(_mem))
@@ -213,6 +214,12 @@ void CPU::clock() {
 	case 0x10: // BPL Relative
 		BPL(REL());
 		break;
+	case 0x15: // ORA ZeroPage,X
+		ORA(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0x16: // ASL ZeroPage,X
+		ASL(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0x18: // CLC Implied
 		CLC();
 		break;
@@ -246,6 +253,12 @@ void CPU::clock() {
 	case 0x30: // BMI Relative
 		BMI(REL());
 	 	break;
+	case 0x35: // AND ZeroPage,X
+		AND(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0x36: // ROL ZeroPage,X
+		ROL(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0x38: // SEC Implied
 		SEC();
 		break;
@@ -269,6 +282,12 @@ void CPU::clock() {
 		break;
 	case 0x4D: // EOR Absolute
 		EOR(ABS());
+		break;
+	case 0x55: // EOR ZeroPage,X
+		EOR(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0x56: // LSR ZeroPage,X
+		LSR(ZERO_PAGE_INDEXED(mX));
 		break;
 	case 0x58: // CLI Implied
 		CLI();
@@ -303,6 +322,9 @@ void CPU::clock() {
 	case 0x75: // ADC Immediate
 		ADC(ZERO_PAGE_INDEXED(mX));
 		break;
+	case 0x76: // ROR ZeroPage,X
+		ROR(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0x78: // SEI Implied
 		SEI();
 		break;
@@ -336,8 +358,14 @@ void CPU::clock() {
 	case 0x91: // STA Indirect,Y
 		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
+	case 0x94: // STY ZeroPage,X
+		STY(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0x95: // STA ZeroPage,X
 		STA(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0x96: // STX ZeroPage,Y
+		STX(ZERO_PAGE_INDEXED(mY));
 		break;
 	case 0x98: // TYA Implied
 		TYA();
@@ -393,8 +421,14 @@ void CPU::clock() {
 	case 0xB1: // LDA Indirect,Y
 		LDA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
+	case 0xB4: // LDY ZeroPage,X
+		LDY(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0xB5: // LDA ZeroPage,X
-		LDA(ZERO_PAGE_INDEXED( mX));
+		LDA(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0xB6: // LDX ZeroPage,Y
+		LDX(ZERO_PAGE_INDEXED(mY));
 		break;
 	case 0xB8: // CLV Implied
 		CLV();
@@ -435,6 +469,12 @@ void CPU::clock() {
 	case 0xD1: // CMP Indirect,Y
 		CMP(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
 		break;
+	case 0xD5: // CMP ZeroPage,X
+		CMP(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0xD6: // DEC ZeroPage,X
+		DEC(ZERO_PAGE_INDEXED(mX));
+		break;
 	case 0xD8: // CLD Implied
 		CLD();
 		break;
@@ -457,6 +497,12 @@ void CPU::clock() {
 		break;
 	case 0xF0: // BEQ Relative
 		BEQ(REL());
+		break;
+	case 0xF5: // SBC ZeroPage,X
+		SBC(ZERO_PAGE_INDEXED(mX));
+		break;
+	case 0xF6: // INC ZeroPage,X
+		INC(ZERO_PAGE_INDEXED(mX));
 		break;
 	case 0xF8: // SED Implied
 		SED();
