@@ -149,7 +149,7 @@ void NES::clock() {
 		mCPU->clock();
 		mAPU->clock();
 		mDClockCPU = 11;
-		this->dump6000();
+		//this->dump6000();
 	} else {
 		mDClockCPU--;
 	}
@@ -181,14 +181,28 @@ uint8_t NES::getMapperNo() {
 
 void NES::dump6000() {
 	uint16_t addr = 0x6004;
+	static int sCheckState = 0;
 
+	printf("0x6000=0x%02x\n", mERAM[0]);
+	printf("0x6001-0x6003=%02x %02x %02x\n", mERAM[1], mERAM[2], mERAM[3]);
 	putchar('[');
 	for (addr = 0x6004; addr < 0x8000; addr++) {
-		if (mWRAM[addr] == '\0') {
+		if (mERAM[addr - 0x6000] == '\0') {
 			break;
 		}
-		putchar(mWRAM[addr]);
+		putchar(mERAM[addr - 0x6000]);
 	}
 	putchar(']');
 	putchar('\n');
+#if 0
+	if (sCheckState == 0) {
+		if (mERAM[0] == 0x80) {
+			sCheckState = 1;
+		}
+	} else if (sCheckState == 1) {
+		if (mERAM[0] != 0x80 && mERAM[0] != 0x81) {
+			throw std::runtime_error("error detected.");
+		}
+	}
+#endif
 }

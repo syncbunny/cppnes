@@ -253,6 +253,8 @@ void PPU::renderSprite(int y) {
 		}
 		uint8_t pat1 = spTable[sp->n*16 + v];
 		uint8_t pat2 = spTable[sp->n*16 + v + 8];
+		uint8_t attr = sp->a&0x03;
+		struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE + attr*4];
 		for (int x = 0; x < 256; x++) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
@@ -263,18 +265,15 @@ void PPU::renderSprite(int y) {
 				u2 = 7-u2;
 			}
 
-			// TODO: use color palette
 			uint8_t col = 0;
 			col |= (pat2 >> u2)&0x01; col <<= 1;
-			col |= (pat1 >> u2)&0x01;;
+			col |= (pat1 >> u2)&0x01;
 			if (col == 0) {
 				continue;
 			}
 			if (i == 0) {
 				SET_SP_HIT();
 			}
-			uint8_t attr = sp->a&0x03;
-			struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE + attr*4];
 			col = paletteP->col[col]; // [00 .. 3F]
 
 			mScreen[((y+1)*256 +x)*3 +0] = colors[col*3 +0];
