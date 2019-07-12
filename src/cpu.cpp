@@ -481,6 +481,9 @@ void CPU::clock() {
 	case 0xCA: // DEX Implied
 		DEX();
 		break;
+	case 0xCC: // CPY Absolute
+		CPY(ABS());
+		break;
 	case 0xCD: // CMP Absolute
 		CMP(ABS());
 		break;
@@ -518,6 +521,9 @@ void CPU::clock() {
 		break;
 	case 0xE9: // SBC Immediate
 		SBC(IMM());
+		break;
+	case 0xEC: // CPX Absolute
+		CPX(ABS());
 		break;
 	case 0xEE: // INC Absolute
 		INC(ABS());
