@@ -37,6 +37,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define UNSET_I() (mP &= IFLG_I)
 #define UNSET_D() (mP &= IFLG_D)
 #define CLEAR_B() (mP &= IFLG_B)
+#define UNSET_V() (mP &= IFLG_V)
 #define UNSET_N() (mP &= IFLG_N)
 #define UNSET_NZ() (mP &= IFLG_NZ)
 
@@ -93,15 +94,17 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define RTI() (mP = POP(), mPC = POP2())
 #define SEC() (SET_C())
 #define SEI() (SET_I())
+#define SED() (SET_D())
 #define CLC() (UNSET_C())
 #define CLI() (UNSET_I())
 #define CLD() (UNSET_D())
+#define CLV() (UNSET_V())
 #define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TAX() (mX = mA, UPDATE_NZ(mX))
 #define TXA() (mA = mX, UPDATE_NZ(mX))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
 #define TXS() (mS = mX) // No flag update
-#define TSX() (mX = mX, UPDATE_NZ(mS))
+#define TSX() (mX = mS, UPDATE_NZ(mX))
 
 #define IMM() (mPC++)
 #define ABS() (mPC=mPC+2, mMapper->read2Bytes(mPC-2))
@@ -393,6 +396,9 @@ void CPU::clock() {
 	case 0xB5: // LDA ZeroPage,X
 		LDA(ZERO_PAGE_INDEXED( mX));
 		break;
+	case 0xB8: // CLV Implied
+		CLV();
+		break;
 	case 0xB9: // LDA Absolute,Y
 		LDA(ABS_INDEXED(mY));
 		break;
@@ -432,6 +438,9 @@ void CPU::clock() {
 	case 0xD8: // CLD Implied
 		CLD();
 		break;
+	case 0xD9: // CMP Absolute,Y
+		LDA(ABS_INDEXED(mY));
+		break;
 	case 0xE0: // CPX Immediate
 		CPX(IMM());
 		break;
@@ -448,6 +457,9 @@ void CPU::clock() {
 		break;
 	case 0xF0: // BEQ Relative
 		BEQ(REL());
+		break;
+	case 0xF8: // SED Implied
+		SED();
 		break;
 	case 0xFD: // SBC Absolute,X
 		SBC(ABS_INDEXED(mX));
@@ -520,7 +532,7 @@ void CPU::buildSBC_APvcTable() {
 			for (int c = 0; c < 2; c++) {
 				uint8_t _c = (c==0)? 1:0;
 				uint8_t aa = a;
-				int cc = 0xff + a - b + c;
+				int cc = 0x100 + a - b - _c;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
 				if (cc >= 0x100) {
