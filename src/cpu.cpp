@@ -211,6 +211,9 @@ void CPU::clock() {
 	case 0x0D: // ORA Absolute
 		ORA(ABS());
 		break;
+	case 0x0E: // ASL Absolute
+		ASL(ABS());
+		break;
 	case 0x10: // BPL Relative
 		BPL(REL());
 		break;
@@ -250,6 +253,12 @@ void CPU::clock() {
 	case 0x2C: // BIT Absolute
 		BIT(ABS());
 		break;
+	case 0x2D: // AND Absolute
+		AND(ABS());
+		break;
+	case 0x2E: // ROL Absolute
+		ROL(ABS());
+		break;
 	case 0x30: // BMI Relative
 		BMI(REL());
 	 	break;
@@ -282,6 +291,9 @@ void CPU::clock() {
 		break;
 	case 0x4D: // EOR Absolute
 		EOR(ABS());
+		break;
+	case 0x4E: // LSR Absolute
+		LSR(ABS());
 		break;
 	case 0x55: // EOR ZeroPage,X
 		EOR(ZERO_PAGE_INDEXED(mX));
@@ -318,6 +330,12 @@ void CPU::clock() {
 		break;
 	case 0x6C: // JMP Indirect
 		JMP(INDIRECT(ABS()));
+		break;
+	case 0x6D: // ADC Absolute
+		ADC(ABS());
+		break;
+	case 0x6E: // ROR Absolute
+		ROR(ABS());
 		break;
 	case 0x75: // ADC Immediate
 		ADC(ZERO_PAGE_INDEXED(mX));
@@ -463,6 +481,12 @@ void CPU::clock() {
 	case 0xCA: // DEX Implied
 		DEX();
 		break;
+	case 0xCD: // CMP Absolute
+		CMP(ABS());
+		break;
+	case 0xCE: // DEC Absolute
+		DEC(ABS());
+		break;
 	case 0xD0: // BNE Relative
 		BNE(REL());
 		break;
@@ -494,6 +518,12 @@ void CPU::clock() {
 		break;
 	case 0xE9: // SBC Immediate
 		SBC(IMM());
+		break;
+	case 0xEE: // INC Absolute
+		INC(ABS());
+		break;
+	case 0xED: // SBC Absolute
+		SBC(ABS());
 		break;
 	case 0xF0: // BEQ Relative
 		BEQ(REL());
