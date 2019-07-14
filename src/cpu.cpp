@@ -664,7 +664,7 @@ void CPU::buildADC_APvcTable() {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
 
-				if (((a ^ b) & 0x80) == 0) {
+				if ((a ^ b) & (a ^ cc) & 0x80) {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
