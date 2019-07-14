@@ -526,8 +526,7 @@ void CPU::buildSBC_APvcTable() {
 				if (cc >= 0x100) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
-
-				if (((a ^ b) & 0x80) == 0) {
+				if ((a ^ b) & (a ^ cc) & 0x80) {
 					mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
