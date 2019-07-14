@@ -31,6 +31,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define SET_I() (mP |= FLG_I)
 #define SET_D() (mP |= FLG_D)
 #define SET_B() (mP |= FLG_B)
+#define SET_V() (mP |= FLG_V)
 #define SET_N() (mP |= FLG_N)
 #define UNSET_C() (mP &= IFLG_C)
 #define UNSET_Z() (mP &= IFLG_Z)
@@ -56,8 +57,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define STA(addr) (mMapper->write1Byte(addr, mA))
 #define STX(addr) (mMapper->write1Byte(addr, mX))
 #define STY(addr) (mMapper->write1Byte(addr, mY))
-#define INC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
-#define DEC(addr) (_addr = addr, mMapper->write1Byte(_addr, _mem = (mMapper->read1Byte(_addr)+1)), UPDATE_NZ(_mem))
+#define INC(addr) (_addr = addr, _mem=mMapper->read1Byte(_addr), _mem+=1, mMapper->write1Byte(_addr, _mem), UPDATE_NZ(_mem))
+#define DEC(addr) (_addr = addr, _mem=mMapper->read1Byte(_addr), _mem-=1, mMapper->write1Byte(_addr, _mem), UPDATE_NZ(_mem))
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define EOR(addr) (mA ^= mMapper->read1Byte(addr), UPDATE_NZ(mA))
@@ -66,7 +67,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
-#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0, _mem &= mA, UPDATE_Z(_mem))
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? SET_N():UNSET_N(), mP |= (_mem&0x40)? SET_V():UNSET_V(), _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BCS(addr) (mPC = ((mP&FLG_C)!=0)? addr:mPC+1)
@@ -655,16 +656,15 @@ void CPU::buildADC_APvcTable() {
 	for (int a = 0; a < 256; a++) {
 		for (int b = 0; b < 256; b++) {
 			for (int c = 0; c < 2; c++) {
-				uint8_t aa = a;
-				uint8_t cc = a+b+c;
+				int cc = a+b+c;
 				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
  
-				if (a+b+c >= 256) {
+				if (cc >= 256) {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_C;
 				}
 
-				if ((a ^ b) & (a ^ cc) & 0x80) {
+				if (((a ^ b) ^ 0x80) & (a ^ cc) & 0x80) {
 					mADC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc |= FLG_V;
 				}
 			}
@@ -678,7 +678,6 @@ void CPU::buildSBC_APvcTable() {
 		for (int b = 0; b < 256; b++) {
 			for (int c = 0; c < 2; c++) {
 				uint8_t _c = (c==0)? 1:0;
-				uint8_t aa = a;
 				int cc = 0x100 + a - b - _c;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].a = cc;
 				mSBC_APvcTable[((uint16_t)a*256 +b)*2 +c].p_vc = 0;
