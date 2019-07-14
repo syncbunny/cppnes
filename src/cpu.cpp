@@ -117,6 +117,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_INDEXED(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
+#define JMP_INDIRECT(x) (mMapper->read2BytesSp((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
 int clockTable[] = {
@@ -295,6 +296,9 @@ void CPU::clock() {
 	case 0x45: // EOR ZeroPage
 		EOR(ZERO_PAGE(mPC));
 		break;
+	case 0x46: // LSR ZeroPage
+		LSR(ZERO_PAGE(mPC));
+		break;
 	case 0x48: // PHA Implied
 		PHA();
 		break;
@@ -356,7 +360,7 @@ void CPU::clock() {
 		ROR_A();
 		break;
 	case 0x6C: // JMP Indirect
-		JMP(INDIRECT(ABS()));
+		JMP(JMP_INDIRECT(ABS()));
 		break;
 	case 0x6D: // ADC Absolute
 		ADC(ABS());
