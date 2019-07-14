@@ -69,14 +69,14 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? FLG_N:0, mP |= (_mem&40)? FLG_V:0, _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
-#define BVC(addr) (mPC = ((mP&FLG_V)==0)? addr:mPC+1)
-#define BVS(addr) (mPC = ((mP&FLG_V)!=0)? addr:mPC+1)
-#define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
-#define BNE(addr) (mPC = ((mP&FLG_Z)==0)? addr:mPC+1)
-#define BEQ(addr) (mPC = ((mP&FLG_Z)!=0)? addr:mPC+1)
-#define BMI(addr) (mPC = ((mP&FLG_N)==0)? mPC+1:addr)
-#define BCS(addr) (mPC = ((mP&FLG_C)==0)? mPC+1:addr)
+#define BCS(addr) (mPC = ((mP&FLG_C)!=0)? addr:mPC+1)
 #define BCC(addr) (mPC = ((mP&FLG_C)==0)? addr:mPC+1)
+#define BEQ(addr) (mPC = ((mP&FLG_Z)!=0)? addr:mPC+1)
+#define BNE(addr) (mPC = ((mP&FLG_Z)==0)? addr:mPC+1)
+#define BVS(addr) (mPC = ((mP&FLG_V)!=0)? addr:mPC+1)
+#define BVC(addr) (mPC = ((mP&FLG_V)==0)? addr:mPC+1)
+#define BMI(addr) (mPC = ((mP&FLG_N)!=0)? addr:mPC+1)
+#define BPL(addr) (mPC = ((mP&FLG_N)==0)? addr:mPC+1)
 #define PHA() (PUSH(mA))
 #define PLA() (mA=POP(), UPDATE_NZ(mA))
 #define PHP() (SET_B(), PUSH(mP))
@@ -563,6 +563,12 @@ void CPU::clock() {
 		break;
 	case 0xE0: // CPX Immediate
 		CPX(IMM());
+		break;
+	case 0xE4: // CPX ZeroPage
+		CPX(ZERO_PAGE(mPC));
+		break;
+	case 0xE5: // SBC ZeroPage
+		SBC(ZERO_PAGE(mPC));
 		break;
 	case 0xE6: // INC ZeroPage
 		INC(ZERO_PAGE(mPC));
