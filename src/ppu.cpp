@@ -171,6 +171,22 @@ void PPU::write(uint8_t val) {
 	}
 }
 
+uint8_t PPU::read() {
+	if (mWriteAddr >= 0x4000) {
+                char msg[1024];
+		sprintf(msg, "PPU::read: unmapped address(%04x)", mWriteAddr);
+		throw std::runtime_error(msg);
+	}
+	uint8_t ret = mMem[mWriteAddr];
+	if ((mCR1 & FLAG_ADDR_INC) == 0) {
+		mWriteAddr += 1;
+	} else {
+		mWriteAddr += 32;
+	}
+
+	return ret;
+}
+
 void PPU::renderBG(int x, int y) {
 	if (x >= 256 || y >= 240) {
 		return;

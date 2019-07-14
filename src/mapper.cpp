@@ -59,6 +59,8 @@ void Mapper::setNo(uint8_t no) {
 void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 	if (addr <= 0x07FF) {
 		mWRAM[addr] = val;
+	} else if (addr >= 0x0800 && addr <= 0x0FFF) {
+		mWRAM[addr-0x0800] = val;
 	} else if (addr == 0x2000) {
 		mPPU->setCR1(val);
 	} else if (addr == 0x2001) {
@@ -158,12 +160,16 @@ uint8_t Mapper::read1Byte(uint16_t addr) {
 
 	if (addr <= 0x07FF) {
 		ret = mWRAM[addr];
+	} else if (addr >= 0x0800 && addr <= 0x0FFF) {
+		ret = mWRAM[addr-0x0800];
 	} else if (addr == 0x2000) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2001) {
 		ret = mPPU->getCR1();
 	} else if (addr == 0x2002) {
 		ret = mPPU->getSR();
+	} else if (addr == 0x2007) {
+		ret = mPPU->read();
 	} else if (addr == 0x4015) {
 		ret = mAPU->getChCtrl();
 	} else if (addr == 0x4016) {

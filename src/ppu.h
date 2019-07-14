@@ -49,6 +49,7 @@ public:
 	virtual void setScroll(uint8_t val);
 	virtual void setWriteAddr(uint8_t a);
 	virtual void write(uint8_t val);
+	virtual uint8_t read();
 	virtual void clock();
 
 protected:
