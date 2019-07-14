@@ -308,7 +308,7 @@ void NESForTest::cputest_SBC_IMM_1() {
 	check_eq("cputest_SBC_IMM_1: A", mTestCPU->A(), 0x00);
 	check_eq("cputest_SBC_IMM_1: flag N", mTestCPU->flagN(), 0);
 	check_eq("cputest_SBC_IMM_1: flag Z", mTestCPU->flagZ(), 1);
-	check_eq("cputest_SBC_IMM_1: flag C", mTestCPU->flagC(), 0);
+	check_eq("cputest_SBC_IMM_1: flag C", mTestCPU->flagC(), 1);
 	check_eq("cputest_SBC_IMM_1: flag V", mTestCPU->flagV(), 0);
 }
 
@@ -329,7 +329,7 @@ void NESForTest::cputest_SBC_IMM_2() {
 	check_eq("cputest_SBC_IMM_2: A", mTestCPU->A(), 0xFF);
 	check_eq("cputest_SBC_IMM_2: flag N", mTestCPU->flagN(), 1);
 	check_eq("cputest_SBC_IMM_2: flag Z", mTestCPU->flagZ(), 0);
-	check_eq("cputest_SBC_IMM_2: flag C", mTestCPU->flagC(), 1);
+	check_eq("cputest_SBC_IMM_2: flag C", mTestCPU->flagC(), 0);
 	check_eq("cputest_SBC_IMM_2: flag V", mTestCPU->flagV(), 0);
 }
 
@@ -350,7 +350,7 @@ void NESForTest::cputest_SBC_IMM_3() {
 	check_eq("cputest_SBC_IMM_3: A", mTestCPU->A(), 0x7F);
 	check_eq("cputest_SBC_IMM_3: flag N", mTestCPU->flagN(), 0);
 	check_eq("cputest_SBC_IMM_3: flag Z", mTestCPU->flagZ(), 0);
-	check_eq("cputest_SBC_IMM_3: flag C", mTestCPU->flagC(), 0);
+	check_eq("cputest_SBC_IMM_3: flag C", mTestCPU->flagC(), 1);
 	check_eq("cputest_SBC_IMM_3: flag V", mTestCPU->flagV(), 1);
 }
 
