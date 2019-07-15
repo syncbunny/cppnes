@@ -235,6 +235,19 @@ uint16_t Mapper::indirect_x(uint16_t addr, uint8_t x) {
 	return p;
 }
 
+uint16_t Mapper::indirect_y(uint16_t addr, uint8_t y) {
+	uint16_t p;
+	uint8_t z;
+
+        z = this->read1Byte(addr);
+
+	p = this->read1Byte(z++);
+	p |= ((uint16_t)this->read1Byte(z++) << 8);
+	p += y;
+
+	return p;
+}
+
 void Mapper::startDMA(uint8_t val) {
 	uint16_t addr = val;
 	addr <<= 8;

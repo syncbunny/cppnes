@@ -27,6 +27,7 @@ public:
 	virtual uint16_t read2Bytes(uint16_t addr);
 	virtual uint16_t read2BytesSp(uint16_t addr);
 	virtual uint16_t indirect_x(uint16_t addr, uint8_t x);
+	virtual uint16_t indirect_y(uint16_t addr, uint8_t y);
 	virtual void push2Bytes(uint16_t addr, uint16_t val);
 	virtual uint16_t pop2Bytes(uint16_t addr);
 
