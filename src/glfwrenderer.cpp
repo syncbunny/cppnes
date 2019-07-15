@@ -108,7 +108,7 @@ void GLFWRenderer::setPAD() {
 	mPAD->setStart(0, glfwGetKey(mWindow, GLFW_KEY_ENTER));
 	mPAD->setSelect(0, glfwGetKey(mWindow, GLFW_KEY_RIGHT_SHIFT));
 	mPAD->setA(0, glfwGetKey(mWindow, GLFW_KEY_A));
-	mPAD->setB(0, glfwGetKey(mWindow, GLFW_KEY_B));
+	mPAD->setB(0, glfwGetKey(mWindow, GLFW_KEY_S));
 	mPAD->setUp(0, glfwGetKey(mWindow, GLFW_KEY_UP));
 	mPAD->setDown(0, glfwGetKey(mWindow, GLFW_KEY_DOWN));
 	mPAD->setLeft(0, glfwGetKey(mWindow, GLFW_KEY_LEFT));
