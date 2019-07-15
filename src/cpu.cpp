@@ -117,6 +117,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ZERO_PAGE(x) (mPC=mPC+1, mMapper->read1Byte(mPC-1))
 #define ZERO_PAGE_INDEXED(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
+#define INDIRECT_X() (mMapper->indirect_x(mPC++, mX))
 #define JMP_INDIRECT(x) (mMapper->read2BytesSp((x)))
 #define IND_Y(x) ((x)+(uint16_t)(mY))
 
@@ -249,7 +250,7 @@ void CPU::clock() {
 		AND(ZERO_PAGE(mPC));
 		break;
 	case 0x26: // ROL ZeroPage 
-		AND(ZERO_PAGE(mPC));
+		ROL(ZERO_PAGE(mPC));
 		break;
 	case 0x28: // PLP Implied
 		PLP();
@@ -342,7 +343,7 @@ void CPU::clock() {
 		RTS();
 		break;
 	case 0x61: // ADC Indirect,X
-		ADC(INDIRECT(ZERO_PAGE_INDEXED(mX)));
+		ADC(INDIRECT_X());
 		break;
 	case 0x65: // ADC ZeroPage
 		ADC(ZERO_PAGE(mPC));
@@ -390,7 +391,7 @@ void CPU::clock() {
 		ROR(ABS_INDEXED(mX));
 		break;
 	case 0x81: // STA Indirect,X
-		STA(INDIRECT(ZERO_PAGE_INDEXED(mX)));
+		STA(INDIRECT_X());
 		break;
 	case 0x84: // STY ZeroPage
 		STY(ZERO_PAGE(mPC));
@@ -447,7 +448,7 @@ void CPU::clock() {
 		LDY(IMM());
 		break;
 	case 0xA1: // LDA Indirect,X
-		LDA(INDIRECT(ZERO_PAGE_INDEXED(mX)));
+		LDA(INDIRECT_X());
 		break;
 	case 0xA2: // LDX Immediate
 		LDX(IMM());
@@ -514,6 +515,9 @@ void CPU::clock() {
 		break;
 	case 0xC0: // CPY Immediate
 		CPY(IMM());
+		break;
+	case 0xC1: // CMP Indirect,X
+		CMP(INDIRECT_X());
 		break;
 	case 0xC4: // CPY ZeroPage
 		CPY(ZERO_PAGE(mPC));
