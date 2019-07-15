@@ -198,6 +198,9 @@ void CPU::clock() {
 	uint8_t o = mMapper->read1Byte(mPC++);
 	switch(o) {
 	// at this point, mPC is first byte of operand.
+	case 0x01: // ORA Indirect,X
+		ORA(INDIRECT_X());
+		break;
 	case 0x05: // ORA ZeroPage
 		ORA(ZERO_PAGE(mPC));
 		break;
@@ -242,6 +245,9 @@ void CPU::clock() {
 		break;
 	case 0x20: // JSR Absolute
 		JSR(ABS());
+		break;
+	case 0x21: // AND Indirect,X
+		AND(INDIRECT_X());
 		break;
 	case 0x24: // BIT ZeroPage
 		BIT(ZERO_PAGE(mPC));
@@ -293,6 +299,9 @@ void CPU::clock() {
 		break;
 	case 0x40: // RTI Implied
 		RTI();
+		break;
+	case 0x41: // EOR Indirect,X
+		EOR(INDIRECT_X());
 		break;
 	case 0x45: // EOR ZeroPage
 		EOR(ZERO_PAGE(mPC));
@@ -572,6 +581,9 @@ void CPU::clock() {
 		break;
 	case 0xE0: // CPX Immediate
 		CPX(IMM());
+		break;
+	case 0xE1: // SBC Indirect,X
+		SBC(INDIRECT_X());
 		break;
 	case 0xE4: // CPX ZeroPage
 		CPX(ZERO_PAGE(mPC));
