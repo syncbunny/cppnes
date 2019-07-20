@@ -118,8 +118,8 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define ZERO_PAGE_INDEXED(x) (mPC=mPC+1, _zpaddr = mMapper->read1Byte(mPC-1), _zpaddr+=(x))
 #define INDIRECT(x) (mMapper->read2Bytes((x)))
 #define INDIRECT_X() (mMapper->indirect_x(mPC++, mX))
+#define INDIRECT_Y() (mMapper->indirect_y(mPC++, mY))
 #define JMP_INDIRECT(x) (mMapper->read2BytesSp((x)))
-#define IND_Y(x) ((x)+(uint16_t)(mY))
 
 int clockTable[] = {
 	/* xx    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F */
@@ -225,6 +225,9 @@ void CPU::clock() {
 	case 0x10: // BPL Relative
 		BPL(REL());
 		break;
+	case 0x11: // ORA Indirect,Y
+		ORA(INDIRECT_Y());
+		break;
 	case 0x15: // ORA ZeroPage,X
 		ORA(ZERO_PAGE_INDEXED(mX));
 		break;
@@ -279,6 +282,9 @@ void CPU::clock() {
 	case 0x30: // BMI Relative
 		BMI(REL());
 	 	break;
+	case 0x31: // AND Indirect,Y
+		AND(INDIRECT_Y());
+		break;
 	case 0x35: // AND ZeroPage,X
 		AND(ZERO_PAGE_INDEXED(mX));
 		break;
@@ -329,6 +335,9 @@ void CPU::clock() {
 		break;
 	case 0x50: // BVC Relative
 		BVC(REL());
+		break;
+	case 0x51: // EOR Indirect,Y
+		EOR(INDIRECT_Y());
 		break;
 	case 0x55: // EOR ZeroPage,X
 		EOR(ZERO_PAGE_INDEXED(mX));
@@ -381,6 +390,9 @@ void CPU::clock() {
 	case 0x70: // BVS Relative
 		BVS(REL());
 		break;
+	case 0x71: // ADC Indirect,Y
+		ADC(INDIRECT_Y());
+		break;
 	case 0x75: // ADC ZeroPage,X
 		ADC(ZERO_PAGE_INDEXED(mX));
 		break;
@@ -430,7 +442,7 @@ void CPU::clock() {
 		BCC(REL());
 		break;
 	case 0x91: // STA Indirect,Y
-		STA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		STA(INDIRECT_Y());
 		break;
 	case 0x94: // STY ZeroPage,X
 		STY(ZERO_PAGE_INDEXED(mX));
@@ -493,7 +505,7 @@ void CPU::clock() {
 		BCS(REL());
 		break;
 	case 0xB1: // LDA Indirect,Y
-		LDA(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		LDA(INDIRECT_Y());
 		break;
 	case 0xB4: // LDY ZeroPage,X
 		LDY(ZERO_PAGE_INDEXED(mX));
@@ -559,7 +571,7 @@ void CPU::clock() {
 		BNE(REL());
 		break;
 	case 0xD1: // CMP Indirect,Y
-		CMP(IND_Y(INDIRECT(ZERO_PAGE(mPC))));
+		CMP(INDIRECT_Y());
 		break;
 	case 0xD5: // CMP ZeroPage,X
 		CMP(ZERO_PAGE_INDEXED(mX));
@@ -613,6 +625,9 @@ void CPU::clock() {
 		break;
 	case 0xF0: // BEQ Relative
 		BEQ(REL());
+		break;
+	case 0xF1: // SBC Indirect,Y
+		SBC(INDIRECT_Y());
 		break;
 	case 0xF5: // SBC ZeroPage,X
 		SBC(ZERO_PAGE_INDEXED(mX));
