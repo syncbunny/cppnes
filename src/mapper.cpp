@@ -202,21 +202,37 @@ uint16_t Mapper::read2Bytes(uint16_t addr) {
 	return ret;
 }
 
-uint16_t Mapper::read2BytesLE(uint16_t addr) {
+uint16_t Mapper::read2BytesSp(uint16_t addr) {
 	uint16_t ret = 0;
-
-	if (addr >= 0x8000) {
-		ret = mPROM[addr-0x8000];
-		ret <<= 8;
-		ret |= mPROM[addr-0x8000 +1];
-	}
-	else if (addr < 0x0800) {
-		ret = mWRAM[addr];
-		ret <<= 8;
-		ret |= mWRAM[addr +1];
+	if ((addr&0x00FF) == 0x00FF) {
+		if (addr >= 0x8000) {
+			ret = mPROM[addr-0x8000];
+			addr &= 0xFF00;
+			ret |= ((uint16_t)mPROM[addr-0x8000] << 8);
+		}
+		else if (addr < 0x0800) {
+			ret = mWRAM[addr];
+			addr &= 0xFF00;
+			ret |= ((uint16_t)mWRAM[addr] << 8);
+		}
+	} else {
+		ret = this->read2Bytes(addr);
 	}
 
 	return ret;
+}
+
+uint16_t Mapper::indirect_x(uint16_t addr, uint8_t x) {
+	uint16_t p;
+	uint8_t z;
+
+        z = this->read1Byte(addr);
+	z += x;
+
+	p = this->read1Byte(z++);
+	p |= ((uint16_t)this->read1Byte(z++) << 8);
+
+	return p;
 }
 
 void Mapper::startDMA(uint8_t val) {

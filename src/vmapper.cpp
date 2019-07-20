@@ -38,13 +38,6 @@ uint16_t VMapper::read2Bytes(uint16_t addr) {
 	return ret;
 }
 
-uint16_t VMapper::read2BytesLE(uint16_t addr) {
-	printf("Mapper::read2BytesLE(%04x)", addr);
-	uint16_t ret = super::read2BytesLE(addr);
-	printf(" => %04x\n", ret);
-	return ret;
-}
-
 void VMapper::write1Byte(uint16_t addr, uint8_t val) {
 	printf("Mapper::write1Byte(%04x, %02x)\n", addr ,val);
 	super::write1Byte(addr, val);
