@@ -18,6 +18,17 @@
 #define FLAG_SP_PAT_TABLE_ADDR (0x08) // 0: &H0000, 1: &H1000
 #define FLAG_ADDR_INC (0x04) // 0: +1, 1: +32
 #define ID_NAME_TABLE_ADDR (0x03)
+
+/* Control Register2 &H2001 */
+#define BG_COLOR_BLUE      (0x80)
+#define BG_COLOR_GREEN     (0x40)
+#define BG_COLOR_RED       (0x20)
+#define FLAG_ENABLE_SP     (0x10)
+#define FLAG_ENABLE_BG     (0x08)
+#define FLAG_MASK_LEFT8_SP (0x04)
+#define FLAG_MASK_LEFT8_BG (0x02)
+#define FLAG_COLOR_DISPLAY (0x01) // 1: Color Display, 0: Monochrome Display
+
 #define NAME_TABLE_BASE (0x2800)
 //  +-----------+-----------+
 //  | 2 ($2800) | 3 ($2C00) |
@@ -310,8 +321,24 @@ void PPU::startVR() {
 }
 
 void PPU::frameStart() {
-	// TODO: fill with BG color
-	memset(mScreen, 0, 256*240*3);
+struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
+	// clear screen and stencil
+	if (mCR2&FLAG_COLOR_DISPLAY) {
+		for (int i = 0; i < 256*240; i++) {
+			mScreen[i*3 +0] = (mCR2&BG_COLOR_RED)?   0xFF:0x00;
+			mScreen[i*3 +1] = (mCR2&BG_COLOR_GREEN)? 0xFF:0x00;
+			mScreen[i*3 +2] = (mCR2&BG_COLOR_BLUE)?  0xFF:0x00;
+		}
+	} else {
+		for (int i = 0; i < 256*240; i++) {
+			struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
+			uint8_t col = 0;
+			col = paletteP->col[0] & 0x30;
+			mScreen[i*3 +0] = colors[col*3 +0];
+			mScreen[i*3 +1] = colors[col*3 +1];
+			mScreen[i*3 +2] = colors[col*3 +2];
+		}
+	}
 	memset(mStencil, 0, 256*240);
 }
 
