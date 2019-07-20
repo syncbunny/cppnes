@@ -258,7 +258,7 @@ void PPU::renderSprite(int y) {
 		spTable = &mMem[0x1000];
 	}
 	int u,v;
-	for (int i = 0; i < 64; i++) {
+	for (int i = 63; i >= 0; i--) {
 		struct Sprite* sp = &sprites[i];
 		if (y+1 < sp->y || y+1 >= sp->y+8 || y+1 >=240) {
 			continue;
