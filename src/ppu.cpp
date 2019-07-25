@@ -109,8 +109,8 @@ void PPU::clock() {
 		this->frameStart();
 	}
 
-	mLineClock++;
 	this->renderBG(mLineClock, mLine);
+	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		CLEAR_SP_HIT();
 		this->renderSprite(mLine);
@@ -174,7 +174,26 @@ void PPU::write(uint8_t val) {
 		sprintf(msg, "PPU::write: unmapped address(%04x)", mWriteAddr);
 		throw std::runtime_error(msg);
 	}
-	mMem[mWriteAddr] = val;
+
+	// Mirroring
+	uint16_t addr = mWriteAddr;
+	if (mMirror == MIRROR_H) {
+		if (addr >= 0x2400 && addr <= 0x27FF) {
+			// name table 1 => name table 0
+			addr -= 0x0400;
+		}
+		else if (addr >= 0x2C00 && addr <= 0x2FF) {
+			// name table 3 => name table 2
+			addr -= 0x0400;
+		}
+	}
+	if (mMirror == MIRROR_V) {
+		if (addr >= 0x2800 && addr <= 0x2FFF) {
+			// name table 2,3 => nambe table 0, 1
+			addr -= 0x0800;
+		}
+	}
+	mMem[addr] = val;
 	if ((mCR1 & FLAG_ADDR_INC) == 0) {
 		mWriteAddr += 1;
 	} else {
@@ -231,6 +250,16 @@ void PPU::renderBG(int x, int y) {
 			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
 	}
+
+	int mirrorHMap[] = {0, 0, 2, 2};
+	int mirrorVMap[] = {0, 1, 0, 1};
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorHMap[nameTableId];
+	}
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVMap[nameTableId];
+	}
+
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
 
