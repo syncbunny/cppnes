@@ -232,6 +232,16 @@ void PPU::renderBG(int x, int y) {
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
+
+	int mirrorHMap[] = {0, 0, 2, 2};
+	int mirrorVMap[] = {0, 1, 0, 1};
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorHMap[nameTableId];
+	}
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVMap[nameTableId];
+	}
+
 	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
 	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
@@ -249,15 +259,6 @@ void PPU::renderBG(int x, int y) {
 		if (mMirror == MIRROR_H) {
 			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
-	}
-
-	int mirrorHMap[] = {0, 0, 2, 2};
-	int mirrorVMap[] = {0, 1, 0, 1};
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorHMap[nameTableId];
-	}
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorVMap[nameTableId];
 	}
 
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
@@ -350,7 +351,6 @@ void PPU::startVR() {
 }
 
 void PPU::frameStart() {
-struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
 	// clear screen and stencil
 	if (mCR2&FLAG_COLOR_DISPLAY) {
 		for (int i = 0; i < 256*240; i++) {
