@@ -18,6 +18,17 @@
 #define FLAG_SP_PAT_TABLE_ADDR (0x08) // 0: &H0000, 1: &H1000
 #define FLAG_ADDR_INC (0x04) // 0: +1, 1: +32
 #define ID_NAME_TABLE_ADDR (0x03)
+
+/* Control Register2 &H2001 */
+#define BG_COLOR_BLUE      (0x80)
+#define BG_COLOR_GREEN     (0x40)
+#define BG_COLOR_RED       (0x20)
+#define FLAG_ENABLE_SP     (0x10)
+#define FLAG_ENABLE_BG     (0x08)
+#define FLAG_MASK_LEFT8_SP (0x04)
+#define FLAG_MASK_LEFT8_BG (0x02)
+#define FLAG_COLOR_DISPLAY (0x01) // 1: Color Display, 0: Monochrome Display
+
 #define NAME_TABLE_BASE (0x2800)
 //  +-----------+-----------+
 //  | 2 ($2800) | 3 ($2C00) |
@@ -98,8 +109,8 @@ void PPU::clock() {
 		this->frameStart();
 	}
 
-	mLineClock++;
 	this->renderBG(mLineClock, mLine);
+	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		CLEAR_SP_HIT();
 		this->renderSprite(mLine);
@@ -163,7 +174,26 @@ void PPU::write(uint8_t val) {
 		sprintf(msg, "PPU::write: unmapped address(%04x)", mWriteAddr);
 		throw std::runtime_error(msg);
 	}
-	mMem[mWriteAddr] = val;
+
+	// Mirroring
+	uint16_t addr = mWriteAddr;
+	if (mMirror == MIRROR_H) {
+		if (addr >= 0x2400 && addr <= 0x27FF) {
+			// name table 1 => name table 0
+			addr -= 0x0400;
+		}
+		else if (addr >= 0x2C00 && addr <= 0x2FF) {
+			// name table 3 => name table 2
+			addr -= 0x0400;
+		}
+	}
+	if (mMirror == MIRROR_V) {
+		if (addr >= 0x2800 && addr <= 0x2FFF) {
+			// name table 2,3 => nambe table 0, 1
+			addr -= 0x0800;
+		}
+	}
+	mMem[addr] = val;
 	if ((mCR1 & FLAG_ADDR_INC) == 0) {
 		mWriteAddr += 1;
 	} else {
@@ -220,6 +250,16 @@ void PPU::renderBG(int x, int y) {
 			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
 	}
+
+	int mirrorHMap[] = {0, 0, 2, 2};
+	int mirrorVMap[] = {0, 1, 0, 1};
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorHMap[nameTableId];
+	}
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVMap[nameTableId];
+	}
+
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
 
@@ -310,8 +350,24 @@ void PPU::startVR() {
 }
 
 void PPU::frameStart() {
-	// TODO: fill with BG color
-	memset(mScreen, 0, 256*240*3);
+struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
+	// clear screen and stencil
+	if (mCR2&FLAG_COLOR_DISPLAY) {
+		for (int i = 0; i < 256*240; i++) {
+			mScreen[i*3 +0] = (mCR2&BG_COLOR_RED)?   0xFF:0x00;
+			mScreen[i*3 +1] = (mCR2&BG_COLOR_GREEN)? 0xFF:0x00;
+			mScreen[i*3 +2] = (mCR2&BG_COLOR_BLUE)?  0xFF:0x00;
+		}
+	} else {
+		for (int i = 0; i < 256*240; i++) {
+			struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
+			uint8_t col = 0;
+			col = paletteP->col[0] & 0x30;
+			mScreen[i*3 +0] = colors[col*3 +0];
+			mScreen[i*3 +1] = colors[col*3 +1];
+			mScreen[i*3 +2] = colors[col*3 +2];
+		}
+	}
 	memset(mStencil, 0, 256*240);
 }
 
