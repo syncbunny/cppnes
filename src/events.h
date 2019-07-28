@@ -32,6 +32,8 @@ public:
 	enum {
 		TYPE_NMI,
 		TYPE_DMA,
+
+		TYPE_CAPTURE,
 	};
 protected:
 	Event(uint16_t type)
@@ -64,6 +66,13 @@ public:
 
 protected:
 	uint16_t mStartAddr;
+};
+
+class EventCapture: public Event {
+public:
+	EventCapture()
+	:Event(TYPE_CAPTURE) {
+	}
 };
 
 #endif

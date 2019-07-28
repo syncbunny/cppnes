@@ -23,6 +23,7 @@ protected:
 	void createObj();
 	void createTexture();
 	void setPAD();
+	void checkSPKey();
 
 protected:
 	GLFW* mGLFW;

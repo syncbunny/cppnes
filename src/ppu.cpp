@@ -435,3 +435,17 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 
 	return paletteP;
 }
+
+void PPU::capture() {
+        char fname[256];
+        sprintf(fname, "FRAME_%04d.ppm", mFrames);
+        FILE* f = fopen(fname, "w");
+        if (f) {
+                fprintf(f, "P6\n");
+                fprintf(f, "256 240\n");
+                fprintf(f, "255\n");
+                fwrite(mScreen, 1, 256*240*3, f);
+                fclose(f);
+        }
+}
+

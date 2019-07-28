@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include "glfwrenderer.h"
 #include "pad.h"
+#include "events.h"
 
 GLFWRenderer::GLFWRenderer()
 :Renderer(), mGLFW(0), mWindow(0) {
@@ -41,6 +42,7 @@ void GLFWRenderer::render(const uint8_t* p) {
 	glfwPollEvents();
 	
 	this->setPAD();
+	this->checkSPKey();
 
 	mGLFW->checkError();
 }
@@ -113,4 +115,11 @@ void GLFWRenderer::setPAD() {
 	mPAD->setDown(0, glfwGetKey(mWindow, GLFW_KEY_DOWN));
 	mPAD->setLeft(0, glfwGetKey(mWindow, GLFW_KEY_LEFT));
 	mPAD->setRight(0, glfwGetKey(mWindow, GLFW_KEY_RIGHT));
+}
+
+void GLFWRenderer::checkSPKey() {
+	if (glfwGetKey(mWindow, GLFW_KEY_C)) {
+		EventQueue& eq = EventQueue::getInstance();
+		eq.push(new EventCapture());		
+	}
 }

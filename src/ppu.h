@@ -51,6 +51,7 @@ public:
 	virtual void write(uint8_t val);
 	virtual uint8_t read();
 	virtual void clock();
+	virtual void capture();
 
 protected:
 	virtual void startVR();
