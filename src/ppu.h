@@ -81,6 +81,7 @@ protected:
 	uint8_t* mScreen;
 	uint8_t* mStencil;
 
+	uint8_t mReadBuffer;
 	uint16_t mLastBGNameTableAddr;
 	struct Palette* mLastPaletteP;
 

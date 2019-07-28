@@ -207,7 +207,13 @@ uint8_t PPU::read() {
 		sprintf(msg, "PPU::read: unmapped address(%04x)", mWriteAddr);
 		throw std::runtime_error(msg);
 	}
-	uint8_t ret = mMem[mWriteAddr];
+	uint8_t ret;
+	if (mWriteAddr <= 0x3EFF) {
+		ret = mReadBuffer;
+		mReadBuffer = mMem[mWriteAddr];
+	} else {
+		ret = mMem[mWriteAddr];
+	}
 	if ((mCR1 & FLAG_ADDR_INC) == 0) {
 		mWriteAddr += 1;
 	} else {
@@ -363,9 +369,15 @@ void PPU::frameStart() {
 			struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
 			uint8_t col = 0;
 			col = paletteP->col[0] & 0x30;
+#if 1
 			mScreen[i*3 +0] = colors[col*3 +0];
 			mScreen[i*3 +1] = colors[col*3 +1];
 			mScreen[i*3 +2] = colors[col*3 +2];
+#else
+			mScreen[i*3 +0] = 0xF0;
+			mScreen[i*3 +1] = 0xA0;
+			mScreen[i*3 +2] = 0xA0;
+#endif
 		}
 	}
 	memset(mStencil, 0, 256*240);
