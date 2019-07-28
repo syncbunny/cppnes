@@ -67,7 +67,7 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
-#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP |= (_mem&0x80)? SET_N():UNSET_N(), mP |= (_mem&0x40)? SET_V():UNSET_V(), _mem &= mA, UPDATE_Z(_mem))
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP = (_mem&0x80)? SET_N():UNSET_N(), mP = (_mem&0x40)? SET_V():UNSET_V(), _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BCS(addr) (mPC = ((mP&FLG_C)!=0)? addr:mPC+1)
@@ -103,10 +103,10 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define CLI() (UNSET_I())
 #define CLD() (UNSET_D())
 #define CLV() (UNSET_V())
-#define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TAX() (mX = mA, UPDATE_NZ(mX))
-#define TXA() (mA = mX, UPDATE_NZ(mX))
+#define TXA() (mA = mX, UPDATE_NZ(mA))
 #define TAY() (mY = mA, UPDATE_NZ(mY))
+#define TYA() (mA = mY, UPDATE_NZ(mA))
 #define TXS() (mS = mX) // No flag update
 #define TSX() (mX = mS, UPDATE_NZ(mX))
 
