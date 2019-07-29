@@ -51,6 +51,7 @@ public:
 	virtual void write(uint8_t val);
 	virtual uint8_t read();
 	virtual void clock();
+	virtual void capture();
 
 protected:
 	virtual void startVR();
@@ -81,6 +82,7 @@ protected:
 	uint8_t* mScreen;
 	uint8_t* mStencil;
 
+	uint8_t mReadBuffer;
 	uint16_t mLastBGNameTableAddr;
 	struct Palette* mLastPaletteP;
 

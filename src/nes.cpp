@@ -29,11 +29,11 @@
 #define FLAG7_MAPPER_HIGH  (0xF0)
 
 NES::NES(Renderer* r) {
-	mMapper = new VMapper();
-	//mMapper = new Mapper();
+	//mMapper = new VMapper();
+	mMapper = new Mapper();
 	mCPU = new CPU(mMapper);
-	mPPU = new PPU();
 	//mPPU = new VPPU();
+	mPPU = new PPU();
 	mAPU = new APU();
 	mPAD = new PAD();
 
@@ -113,6 +113,7 @@ bool NES::loadCartridge(const char* path) {
 	if (this->cartridgeHasTrainer()) {
 		offset += 512;
 	}
+	printf("mapper:%d\n", this->getMapperNo());
 	mMapper->setPROM(&mCartridgeMem[offset], pROMSize*16*1024);
 	mMapper->setCROM(&mCartridgeMem[offset+pROMSize*16*1024], cROMSize*8*1024);
 	mMapper->setNo(this->getMapperNo());
@@ -141,6 +142,9 @@ void NES::clock() {
 		case Event::TYPE_DMA:
 			mDClockCPU = 514*12; // Stop CPU 514 clocks
 			break;
+		case Event::TYPE_CAPTURE:
+			mPPU->capture();
+			break;
 		}
 		delete evt;
 	}
@@ -149,7 +153,7 @@ void NES::clock() {
 		mCPU->clock();
 		mAPU->clock();
 		mDClockCPU = 11;
-		//this->dump6000();
+//		this->dump6000();
 	} else {
 		mDClockCPU--;
 	}

@@ -207,7 +207,13 @@ uint8_t PPU::read() {
 		sprintf(msg, "PPU::read: unmapped address(%04x)", mWriteAddr);
 		throw std::runtime_error(msg);
 	}
-	uint8_t ret = mMem[mWriteAddr];
+	uint8_t ret;
+	if (mWriteAddr <= 0x3EFF) {
+		ret = mReadBuffer;
+		mReadBuffer = mMem[mWriteAddr];
+	} else {
+		ret = mMem[mWriteAddr];
+	}
 	if ((mCR1 & FLAG_ADDR_INC) == 0) {
 		mWriteAddr += 1;
 	} else {
@@ -232,6 +238,16 @@ void PPU::renderBG(int x, int y) {
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
+
+	int mirrorHMap[] = {0, 0, 2, 2};
+	int mirrorVMap[] = {0, 1, 0, 1};
+	if (mMirror == MIRROR_H) {
+		nameTableId = mirrorHMap[nameTableId];
+	}
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVMap[nameTableId];
+	}
+
 	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
 	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
@@ -249,15 +265,6 @@ void PPU::renderBG(int x, int y) {
 		if (mMirror == MIRROR_H) {
 			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
-	}
-
-	int mirrorHMap[] = {0, 0, 2, 2};
-	int mirrorVMap[] = {0, 1, 0, 1};
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorHMap[nameTableId];
-	}
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorVMap[nameTableId];
 	}
 
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
@@ -350,7 +357,6 @@ void PPU::startVR() {
 }
 
 void PPU::frameStart() {
-struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
 	// clear screen and stencil
 	if (mCR2&FLAG_COLOR_DISPLAY) {
 		for (int i = 0; i < 256*240; i++) {
@@ -363,9 +369,15 @@ struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
 			struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
 			uint8_t col = 0;
 			col = paletteP->col[0] & 0x30;
+#if 1
 			mScreen[i*3 +0] = colors[col*3 +0];
 			mScreen[i*3 +1] = colors[col*3 +1];
 			mScreen[i*3 +2] = colors[col*3 +2];
+#else
+			mScreen[i*3 +0] = 0xF0;
+			mScreen[i*3 +1] = 0xA0;
+			mScreen[i*3 +2] = 0xA0;
+#endif
 		}
 	}
 	memset(mStencil, 0, 256*240);
@@ -423,3 +435,17 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 
 	return paletteP;
 }
+
+void PPU::capture() {
+        char fname[256];
+        sprintf(fname, "FRAME_%04d.ppm", mFrames);
+        FILE* f = fopen(fname, "w");
+        if (f) {
+                fprintf(f, "P6\n");
+                fprintf(f, "256 240\n");
+                fprintf(f, "255\n");
+                fwrite(mScreen, 1, 256*240*3, f);
+                fclose(f);
+        }
+}
+
