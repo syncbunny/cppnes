@@ -20,14 +20,14 @@
 #define ID_NAME_TABLE_ADDR (0x03)
 
 /* Control Register2 &H2001 */
-#define BG_COLOR_BLUE      (0x80)
-#define BG_COLOR_GREEN     (0x40)
-#define BG_COLOR_RED       (0x20)
-#define FLAG_ENABLE_SP     (0x10)
-#define FLAG_ENABLE_BG     (0x08)
-#define FLAG_MASK_LEFT8_SP (0x04)
-#define FLAG_MASK_LEFT8_BG (0x02)
-#define FLAG_COLOR_DISPLAY (0x01) // 1: Color Display, 0: Monochrome Display
+#define BG_COLOR_BLUE           (0x80)
+#define BG_COLOR_GREEN          (0x40)
+#define BG_COLOR_RED            (0x20)
+#define FLAG_ENABLE_SP          (0x10)
+#define FLAG_ENABLE_BG          (0x08)
+#define FLAG_MASK_LEFT8_SP      (0x04)
+#define FLAG_MASK_LEFT8_BG      (0x02)
+#define FLAG_MONOCHROME_DISPLAY (0x01) // 0: Color Display, 1: Monochrome Display
 
 #define NAME_TABLE_BASE (0x2800)
 //  +-----------+-----------+
@@ -194,6 +194,10 @@ void PPU::write(uint8_t val) {
 			addr -= 0x0800;
 		}
 	}
+	if (addr >= 0x3F20 && addr <= 0x3FFF) {
+		addr = 0x3F00 | (addr&0x001F);
+	}
+
 	mMem[addr] = val;
 	if ((mCR1 & FLAG_ADDR_INC) == 0) {
 		mWriteAddr += 1;
@@ -366,26 +370,21 @@ void PPU::startVR() {
 
 void PPU::frameStart() {
 	// clear screen and stencil
-	if (mCR2&FLAG_COLOR_DISPLAY) {
+	struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE];
+	uint8_t col = 0;
+	if ((mCR2&FLAG_MONOCHROME_DISPLAY) == 0) {
 		for (int i = 0; i < 256*240; i++) {
-			mScreen[i*3 +0] = (mCR2&BG_COLOR_RED)?   0xFF:0x00;
-			mScreen[i*3 +1] = (mCR2&BG_COLOR_GREEN)? 0xFF:0x00;
-			mScreen[i*3 +2] = (mCR2&BG_COLOR_BLUE)?  0xFF:0x00;
+			col = paletteP->col[0];
+			mScreen[i*3 +0] = (mCR2&BG_COLOR_RED)?   0xFF:colors[col*3 +0];
+			mScreen[i*3 +1] = (mCR2&BG_COLOR_GREEN)? 0xFF:colors[col*3 +1];
+			mScreen[i*3 +2] = (mCR2&BG_COLOR_BLUE)?  0xFF:colors[col*3 +2];
 		}
 	} else {
 		for (int i = 0; i < 256*240; i++) {
-			struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE];
-			uint8_t col = 0;
 			col = paletteP->col[0] & 0x30;
-#if 1
 			mScreen[i*3 +0] = colors[col*3 +0];
 			mScreen[i*3 +1] = colors[col*3 +1];
 			mScreen[i*3 +2] = colors[col*3 +2];
-#else
-			mScreen[i*3 +0] = 0xF0;
-			mScreen[i*3 +1] = 0xA0;
-			mScreen[i*3 +2] = 0xA0;
-#endif
 		}
 	}
 	memset(mStencil, 0, 256*240);
