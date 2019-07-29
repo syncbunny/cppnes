@@ -50,6 +50,7 @@
 #define SET_SP_HIT() (mSR |= FLAG_SP_HIT)
 #define CLEAR_SP_HIT() (mSR &= IFLAG_SP_HIT)
 
+#define SPRITE_ATTRIBUTE_BACK_SPRITE (0x20)
 #define SPRITE_ATTRIBUTE_FLIP_H (0x40)
 #define SPRITE_ATTRIBUTE_FLIP_V (0x80)
 #define STENCIL_BACK_SPRITE (1)
@@ -322,6 +323,9 @@ void PPU::renderSprite(int y) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}
+			if ((sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[(y+1)*256+x] > STENCIL_BACK_SPRITE)) {
+				continue;
+			}
 			u = x - sp->x;
 			uint8_t u2 = u%8; // u2: 0 to 7
 			if ((sp->a & SPRITE_ATTRIBUTE_FLIP_H) == 0) {
@@ -343,7 +347,11 @@ void PPU::renderSprite(int y) {
 			mScreen[((y+1)*256 +x)*3 +1] = colors[col*3 +1];
 			mScreen[((y+1)*256 +x)*3 +2] = colors[col*3 +2];
 
-			mStencil[(y+1)*256+x] = STENCIL_FRONT_SPRITE;
+			if (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) {
+				mStencil[(y+1)*256+x] = STENCIL_BACK_SPRITE;
+			} else {
+				mStencil[(y+1)*256+x] = STENCIL_FRONT_SPRITE;
+			}
 		}
 	}
 }
@@ -394,13 +402,13 @@ bool PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, u
 	uint8_t pat1 = base[pat*16 + vv];
 	uint8_t pat2 = base[pat*16 + vv + 8];
 	uint8_t col = 0;
+
 	col |= (pat2 >> uu)&0x01; col <<= 1;
 	col |= (pat1 >> uu)&0x01;
-	col = paletteP->col[col]; // [00 .. 3F]
-
 	if (col == 0) {
 		return false;
 	}
+	col = paletteP->col[col]; // [00 .. 3F]
 
 	rgb[0] = colors[col*3 +0];
 	rgb[1] = colors[col*3 +1];
