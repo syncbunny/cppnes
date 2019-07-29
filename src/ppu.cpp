@@ -241,7 +241,7 @@ void PPU::renderBG(int x, int y) {
 
 	int mirrorHMap[] = {0, 0, 2, 2};
 	int mirrorVMap[] = {0, 1, 0, 1};
-	if (mMirror == MIRROR_V) {
+	if (mMirror == MIRROR_H) {
 		nameTableId = mirrorHMap[nameTableId];
 	}
 	if (mMirror == MIRROR_V) {
