@@ -17,7 +17,50 @@ void VPPU::setMirror(int m) {
 }
 
 void VPPU::write(uint8_t val) {
-	printf("PPU::write: %04x:%02x\n", mWriteAddr, val);
+	const char* map = "-";
+	if (mWriteAddr >= 0x0000 && mWriteAddr <= 0x0FFF) {
+		map = "pattern table 1";
+	}
+	if (mWriteAddr >= 0x1000 && mWriteAddr <= 0x0FFF) {
+		map = "pattern table 2";
+	}
+	if (mWriteAddr >= 0x2000 && mWriteAddr <= 0x23BF) {
+		map = "name table 0";
+	}
+	if (mWriteAddr >= 0x23C0 && mWriteAddr <= 0x23FF) {
+		map = "attribure table 0";
+	}
+	if (mWriteAddr >= 0x2400 && mWriteAddr <= 0x27BF) {
+		map = "name table 1";
+	}
+	if (mWriteAddr >= 0x27C0 && mWriteAddr <= 0x27FF) {
+		map = "attribure table 1";
+	}
+	if (mWriteAddr >= 0x2800 && mWriteAddr <= 0x2BBF) {
+		map = "name table 2";
+	}
+	if (mWriteAddr >= 0x2BC0 && mWriteAddr <= 0x2BFF) {
+		map = "attribure table 2";
+	}
+	if (mWriteAddr >= 0x2C00 && mWriteAddr <= 0x2CBF) {
+		map = "name table 2";
+	}
+	if (mWriteAddr >= 0x2FC0 && mWriteAddr <= 0x2FFF) {
+		map = "attribure table 2";
+	}
+	if (mWriteAddr >= 0x3000 && mWriteAddr <= 0x3EFF) {
+		map = "MIRROR 1";
+	}
+	if (mWriteAddr >= 0x3F00 && mWriteAddr <= 0x3F0F) {
+		map = "BG palette";
+	}
+	if (mWriteAddr >= 0x3F10 && mWriteAddr <= 0x3F1F) {
+		map = "SP palette";
+	}
+	if (mWriteAddr >= 0x3F20 && mWriteAddr <= 0x3FFF) {
+		map = "MIRROR 2";
+	}
+	printf("PPU::write: %04x(%s):%02x\n", mWriteAddr, map, val);
 	super::write(val);
 }
 
