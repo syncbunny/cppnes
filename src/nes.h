@@ -7,6 +7,7 @@
 #include "pad.h"
 
 class Renderer;
+class Core;
 
 class NES {
 public:
@@ -26,6 +27,7 @@ protected:
 	bool cartridgeHasTrainer();
 	uint8_t getMapperNo();
 	void dump6000();
+	void coreDump(Core* c) const;
 
 protected:
 	Mapper* mMapper;
@@ -40,6 +42,8 @@ protected:
 	int mDClockCPU;
 	int mDClockPPU;
 	int mDMAWait;
+
+	uint32_t mClocks;
 };
 
 #endif

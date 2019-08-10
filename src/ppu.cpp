@@ -5,6 +5,7 @@
 #include "ppu.h"
 #include "events.h"
 #include "renderer.h"
+#include "core.h"
 
 #define CLOCKS_PAR_LINE (341)
 #define DRAWABLE_LINES (240)
@@ -284,17 +285,19 @@ void PPU::renderBG(int x, int y) {
 	int uu = xx%8;
 	int vv = yy%8;
 
-	struct Palette *paletteP;
+	uint8_t paletteId;
 	if (addr == this->mLastBGNameTableAddr) {
-		paletteP = mLastPaletteP;
+		paletteId = mLastPaletteId;
 	} else {
-		paletteP = this->getPalette(&mMem[nameTableBase[nameTableId]], u, v);
+		paletteId = this->getPaletteId(&mMem[nameTableBase[nameTableId]], u, v);
 	}
+	struct Palette* paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + paletteId*4];
+
 	if (this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3])) {
 		mStencil[y*256 +x] = STENCIL_BG;
 	}
 
-	this->mLastPaletteP = paletteP;
+	this->mLastPaletteId = paletteId;
 	this->mLastBGNameTableAddr = addr;
 }
 
@@ -420,7 +423,7 @@ bool PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, u
  * u: [0 .. 31]
  * v: [0 .. 29]
  */
-struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
+uint8_t PPU::getPaletteId(uint8_t* base, uint8_t u, uint8_t v) {
 	uint8_t* attrBase = base+0x03C0;
 	int attrU = u/4; // [0 .. 8]
 	int attrV = v/4; // [0 .. 8]
@@ -438,9 +441,8 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 		attr >>= 2;
 	}
 	attr = attr & 0x03; // [0 .. 3]
-	struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + attr*4];
 
-	return paletteP;
+	return attr;
 }
 
 void PPU::capture() {
@@ -456,3 +458,30 @@ void PPU::capture() {
         }
 }
 
+void PPU::coreDump(Core* c) const {
+	struct PPUCore _ppu;
+
+	_ppu.cr1                 = mCR1;
+	_ppu.cr2                 = mCR2;
+	_ppu.sr                  = mSR;
+	_ppu.scrollOffsetTarget  = mScrollOffsetTarget;
+	_ppu.writeAddr           = mWriteAddr;
+	_ppu.spriteMemAddr       = mSpriteMemAddr;
+	_ppu.scrollX             = mScrollX;
+	_ppu.scrollY             = mScrollY;
+	_ppu.mirror              = mMirror;
+	_ppu.line                = mLine;
+	_ppu.lineClock           = mLineClock;
+	_ppu.frames              = mFrames;
+	_ppu.writeMode           = mWriteMode;
+	_ppu.readBuffer          = mReadBuffer;
+	_ppu.lastBGNameTableAddr = mLastBGNameTableAddr;
+	_ppu.lastPaletteId       = mLastPaletteId;
+
+	memcpy(_ppu.mem, mMem, 0x4000);
+	memcpy(_ppu.spriteMem, mSpriteMem, 256);
+	memcpy(_ppu.screen, mScreen, 256*240*3);
+	memcpy(_ppu.stencil, mStencil, 256*240);
+
+	c->setPPU(_ppu);
+}

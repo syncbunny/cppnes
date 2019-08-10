@@ -3,6 +3,8 @@
 #include <cstring>
 #include <stdexcept>
 #include "cpu.h"
+#include "core.h"
+#include "config.h"
 
 const uint16_t NMI_VECTOR = 0xFFFA;
 const uint16_t RESET_VECTOR = 0xFFFC;
@@ -656,8 +658,26 @@ void CPU::clock() {
 	}
 	mClockRemain = clockTable[o];
 	mP |= FLG_5; // bit5 is always '1'
-	this->dump();
+
+	Config* conf = Config::getInstance();
+	if (conf->getVarbose()) { 
+		this->dump();
+	}
 }
+
+void CPU::coreDump(Core* c) const {
+	struct CPUCore _cpu;
+	_cpu.a = mA;
+	_cpu.x = mX;
+	_cpu.y = mY;
+	_cpu.s = mS;
+	_cpu.p = mP;
+	_cpu.pc = mPC;
+	_cpu.clockRemain = mClockRemain;
+	_cpu.resetFlag = mResetFlag;
+	_cpu.NMIFlag = mNMIFlag;
+	c->setCPU(_cpu);
+};
 
 void CPU::dump() {
 	printf("CPU:PC=%04X, A=%02X, X=%02X, Y=%02X, S=%02X, P=%02X\n", mPC, mA, mX, mY, mS, mP);

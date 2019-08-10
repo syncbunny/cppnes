@@ -34,6 +34,7 @@ public:
 		TYPE_DMA,
 
 		TYPE_CAPTURE,
+		TYPE_COREDUMP,
 	};
 protected:
 	Event(uint16_t type)
@@ -72,6 +73,13 @@ class EventCapture: public Event {
 public:
 	EventCapture()
 	:Event(TYPE_CAPTURE) {
+	}
+};
+
+class EventCoreDump: public Event {
+public:
+	EventCoreDump()
+	:Event(TYPE_COREDUMP) {
 	}
 };
 

@@ -122,4 +122,9 @@ void GLFWRenderer::checkSPKey() {
 		EventQueue& eq = EventQueue::getInstance();
 		eq.push(new EventCapture());		
 	}
+
+	if (glfwGetKey(mWindow, GLFW_KEY_D)) {
+		EventQueue& eq = EventQueue::getInstance();
+		eq.push(new EventCoreDump());		
+	}
 }

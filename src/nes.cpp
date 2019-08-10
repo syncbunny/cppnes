@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "nes.h"
+#include "config.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "vppu.h"
@@ -16,6 +17,7 @@
 #include "vmapper.h"
 #include "events.h"
 #include "renderer.h"
+#include "core.h"
 
 #define FLAG6_V_MIRROR           (0x01)
 #define FLAG6_HAS_BATTARY_BACKUP (0x02)
@@ -40,6 +42,7 @@ NES::NES(Renderer* r) {
 	mDClockCPU = 0;
 	mDClockPPU = 0;
 	mCartridgeMem = 0;
+	mClocks = 0;
 
 	if (r) {
 		mPPU->bindRenderer(r);
@@ -132,11 +135,14 @@ void NES::clock() {
 	//       Master          CPU      PPU
 	// NTSC: 21477272.72 Hz  Base/12  Base/4
 
+	Config* conf = Config::getInstance();
 	Event* evt = EventQueue::getInstance().pop();
 	if (evt) {
 		switch(evt->getType()) {
 		case Event::TYPE_NMI:
-			printf("NES::clock: NMI!\n");
+			if (conf->getVarbose()) {
+				printf("NES::clock: NMI!\n");
+			}
 			mCPU->nmi();
 			break;
 		case Event::TYPE_DMA:
@@ -144,6 +150,13 @@ void NES::clock() {
 			break;
 		case Event::TYPE_CAPTURE:
 			mPPU->capture();
+			break;
+		case Event::TYPE_COREDUMP:
+			Core core;
+			this->coreDump(&core);
+			char fname[32];
+			sprintf(fname, "nes_%010d.dump", mClocks);
+			core.dump(fname);
 			break;
 		}
 		delete evt;
@@ -164,6 +177,8 @@ void NES::clock() {
 	} else {
 		mDClockPPU--;
 	}
+
+	mClocks++;
 }
 
 bool NES::cartridgeHasTrainer() {
@@ -209,4 +224,10 @@ void NES::dump6000() {
 		}
 	}
 #endif
+}
+
+void NES::coreDump(Core* core) const {
+	mCPU->coreDump(core);
+	mPPU->coreDump(core);
+	core->setWRAM(mWRAM);
 }

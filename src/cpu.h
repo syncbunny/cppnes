@@ -9,6 +9,8 @@ struct APvc {
 	uint8_t p_vc;
 };
 
+class Core;
+
 class CPU {
 public:
 	CPU(Mapper* mapper);
@@ -20,6 +22,7 @@ public:
 	void nmi();
 	void clock();
 	void startDMA();
+	void coreDump(Core* c) const;
 	void dump();
 
 protected:
