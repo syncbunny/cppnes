@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include "glfwrenderer.h"
 #include "nes.h"
+#include "core.h"
 #include "config.h"
 #include "pad.h"
 
@@ -26,7 +27,13 @@ int main(int argc, char* argv[]) {
 	Config* conf = Config::getInstance();
 	nes->powerOn();
 	nes->loadCartridge(conf->getROMPath().c_str());
-	nes->reset();
+	if (conf->getCorePath() != "") {
+		Core* core = Core::load(conf->getCorePath().c_str());
+		nes->loadCore(core);
+		delete core;
+	} else {
+		nes->reset();
+	}
 
 	while(true) {
 		nes->clock();
@@ -39,10 +46,17 @@ bool analyzeOpt(int argc, char* argv[]) {
 	int opt;
 	opterr = 0;
 
-	while((opt = getopt(argc, argv, "v")) != -1) {
+	while((opt = getopt(argc, argv, "c:v")) != -1) {
 		switch(opt) {
+		case 'c':
+			conf->setCorePath(std::string(optarg));
+			break;
 		case 'v':
 			conf->setVarbose(true);
+			break;
+		default:
+			fprintf(stderr, "Usage: nes [-v] [-c <corepath>] <rompath>\n");
+			return false;
 			break;
 		}
 	}
@@ -51,7 +65,7 @@ bool analyzeOpt(int argc, char* argv[]) {
 		conf->setROMPath(std::string(argv[i]));
 	}
 	if (conf->getROMPath() == "") {
-		fprintf(stderr, "Usage: nes <rompath>\n");
+		fprintf(stderr, "Usage: nes [-v] [-c <corepath>] <rompath>\n");
 		return false;
 	}
 

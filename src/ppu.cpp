@@ -56,7 +56,7 @@
 #define SPRITE_ATTRIBUTE_FLIP_V (0x80)
 #define STENCIL_BACK_SPRITE (1)
 #define STENCIL_BG (2)
-#define STENCIL_FRONT_SPRITE (3)
+#define STENCIL_FRONT_SPRITE (4)
 
 const uint8_t colors[] = {
 	/* 00 */ 0x6b, 0x6b, 0x6b, 0x00, 0x10, 0x84, 0x08, 0x00, 0x8c, 0x42, 0x00, 0x7b,
@@ -110,12 +110,14 @@ void PPU::clock() {
 	if (mLine == 0 && mLineClock == 0) {
 		this->frameStart();
 	}
+	if (mLineClock == 0) {
+		CLEAR_SP_HIT();
+		this->renderSprite(mLine);
+	}
 
 	this->renderBG(mLineClock, mLine);
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
-		CLEAR_SP_HIT();
-		this->renderSprite(mLine);
 		mLineClock -= CLOCKS_PAR_LINE;
 		mLine++;
 		if (mLine == DRAWABLE_LINES) {
@@ -195,8 +197,9 @@ void PPU::write(uint8_t val) {
 			addr -= 0x0800;
 		}
 	}
-	if (addr >= 0x3F20 && addr <= 0x3FFF) {
+	if (addr >= 0x3F00 && addr <= 0x3FFF) {
 		addr = 0x3F00 | (addr&0x001F);
+		val &= 0x3F;
 	}
 
 	mMem[addr] = val;
@@ -233,7 +236,7 @@ void PPU::renderBG(int x, int y) {
 	if (x >= 256 || y >= 240) {
 		return;
 	}
-	if (mStencil[y*256 +x] > STENCIL_BG) {
+	if (mStencil[y*256 +x] & STENCIL_FRONT_SPRITE) {
 		return;
 	}
 
@@ -294,7 +297,7 @@ void PPU::renderBG(int x, int y) {
 	struct Palette* paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + paletteId*4];
 
 	if (this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3])) {
-		mStencil[y*256 +x] = STENCIL_BG;
+		mStencil[y*256 +x] |= STENCIL_BG;
 	}
 
 	this->mLastPaletteId = paletteId;
@@ -315,10 +318,10 @@ void PPU::renderSprite(int y) {
 	int u,v;
 	for (int i = 63; i >= 0; i--) {
 		struct Sprite* sp = &sprites[i];
-		if (y+1 < sp->y || y+1 >= sp->y+8 || y+1 >=240) {
+		if (y < sp->y+1 || y >= sp->y+1+8) {
 			continue;
 		}
-		v = y+1 - sp->y;
+		v = y - (sp->y+1);
 		if (sp->a & SPRITE_ATTRIBUTE_FLIP_V) {
 			v = 7-v;
 		}
@@ -330,7 +333,7 @@ void PPU::renderSprite(int y) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}
-			if ((sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[(y+1)*256+x] > STENCIL_BACK_SPRITE)) {
+			if ((sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
 				continue;
 			}
 			u = x - sp->x;
@@ -350,14 +353,14 @@ void PPU::renderSprite(int y) {
 			}
 			col = paletteP->col[col]; // [00 .. 3F]
 
-			mScreen[((y+1)*256 +x)*3 +0] = colors[col*3 +0];
-			mScreen[((y+1)*256 +x)*3 +1] = colors[col*3 +1];
-			mScreen[((y+1)*256 +x)*3 +2] = colors[col*3 +2];
+			mScreen[((y)*256 +x)*3 +0] = colors[col*3 +0];
+			mScreen[((y)*256 +x)*3 +1] = colors[col*3 +1];
+			mScreen[((y)*256 +x)*3 +2] = colors[col*3 +2];
 
 			if (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) {
-				mStencil[(y+1)*256+x] = STENCIL_BACK_SPRITE;
+				mStencil[y*256+x] |= STENCIL_BACK_SPRITE;
 			} else {
-				mStencil[(y+1)*256+x] = STENCIL_FRONT_SPRITE;
+				mStencil[y*256+x] |= STENCIL_FRONT_SPRITE;
 			}
 		}
 	}
