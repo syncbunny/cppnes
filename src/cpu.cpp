@@ -667,17 +667,35 @@ void CPU::clock() {
 
 void CPU::coreDump(Core* c) const {
 	struct CPUCore _cpu;
-	_cpu.a = mA;
-	_cpu.x = mX;
-	_cpu.y = mY;
-	_cpu.s = mS;
-	_cpu.p = mP;
-	_cpu.pc = mPC;
+
+	_cpu.a           = mA;
+	_cpu.x           = mX;
+	_cpu.y           = mY;
+	_cpu.s           = mS;
+	_cpu.p           = mP;
+	_cpu.pc          = mPC;
 	_cpu.clockRemain = mClockRemain;
-	_cpu.resetFlag = mResetFlag;
-	_cpu.NMIFlag = mNMIFlag;
+	_cpu.resetFlag   = mResetFlag;
+	_cpu.NMIFlag     = mNMIFlag;
+	_cpu.BRKFlag     = mBRKFlag;
+
 	c->setCPU(_cpu);
-};
+}
+
+void CPU::loadCore(Core* c) {
+	const struct CPUCore _cpu = c->getCPU();
+
+	this->mA           = _cpu.a;
+	this->mX           = _cpu.x;
+	this->mY           = _cpu.y;
+	this->mS           = _cpu.s;
+	this->mP           = _cpu.p;
+	this->mPC          = _cpu.pc;
+	this->mClockRemain = _cpu.clockRemain;
+	this->mResetFlag   = _cpu.resetFlag;
+	this->mNMIFlag     = _cpu.NMIFlag;
+	this->mBRKFlag     = _cpu.BRKFlag;
+}
 
 void CPU::dump() {
 	printf("CPU:PC=%04X, A=%02X, X=%02X, Y=%02X, S=%02X, P=%02X\n", mPC, mA, mX, mY, mS, mP);

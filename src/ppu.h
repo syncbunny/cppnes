@@ -54,6 +54,7 @@ public:
 	virtual void clock();
 	virtual void capture();
 	virtual void coreDump(Core* c) const;
+	virtual void loadCore(Core* c);
 
 protected:
 	virtual void startVR();

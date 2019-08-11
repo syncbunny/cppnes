@@ -485,3 +485,29 @@ void PPU::coreDump(Core* c) const {
 
 	c->setPPU(_ppu);
 }
+
+void PPU::loadCore(Core* c) {
+	const struct PPUCore _ppu = c->getPPU();
+
+	this->mCR1 = _ppu.cr1;
+	this->mCR2 = _ppu.cr2;
+	this->mSR  = _ppu.sr;
+	this->mScrollOffsetTarget = _ppu.scrollOffsetTarget;
+	this->mWriteAddr          = _ppu.writeAddr;
+	this->mSpriteMemAddr      = _ppu.spriteMemAddr;
+	this->mScrollX            = _ppu.scrollX;
+	this->mScrollY            = _ppu.scrollY;
+	this->mMirror             = _ppu.mirror;
+	this->mLine               = _ppu.line;
+	this->mLineClock          = _ppu.lineClock;
+	this->mFrames             = _ppu.frames;
+	this->mWriteMode          = _ppu.writeMode;
+	this->mReadBuffer         = _ppu.readBuffer;
+	this->mLastBGNameTableAddr = _ppu.lastBGNameTableAddr;
+	this->mLastPaletteId       = _ppu.lastPaletteId;
+
+	memcpy(this->mMem,       _ppu.mem, 0x4000);
+	memcpy(this->mSpriteMem, _ppu.spriteMem, 256);
+	memcpy(this->mScreen,    _ppu.screen, 256*240*3);
+	memcpy(this->mStencil,   _ppu.stencil, 256*240);
+}

@@ -16,6 +16,7 @@ public:
 
 public:
 	bool loadCartridge(const char* path);
+	void loadCore(Core* c);
 	void powerOn();
 	void reset();
 	void clock();

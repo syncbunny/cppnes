@@ -11,6 +11,7 @@ struct CPUCore {
 	int clockRemain;
 	bool resetFlag;
 	bool NMIFlag;
+	bool BRKFlag;
 };
 
 struct PPUCore {
@@ -36,7 +37,6 @@ struct PPUCore {
 	uint8_t readBuffer;
 	uint16_t lastBGNameTableAddr;
 	uint8_t lastPaletteId;
-	
 };
 
 class Core {
@@ -48,7 +48,11 @@ public:
 	void setCPU(struct CPUCore& c);
 	void setPPU(struct PPUCore& c);
 	void setWRAM(uint8_t* WRAM);
+	const struct CPUCore getCPU() const;
+	const struct PPUCore getPPU() const;
+	const uint8_t* getWRAM() const;
 	void dump(const char* path);
+	static Core* load(const char* path);
 
 protected:
 	struct CPUCore mCPUCore;

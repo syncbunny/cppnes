@@ -34,9 +34,17 @@ public:
 		return mROMPath;
 	}
 
+	void setCorePath(const std::string& path) {
+		mCorePath = path;
+	}
+	std::string getCorePath() const {
+		return mCorePath;
+	}
+
 protected:
 	bool mVarbose;
 	std::string mROMPath;
+	std::string mCorePath;
 };
 
 #endif

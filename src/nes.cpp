@@ -231,3 +231,9 @@ void NES::coreDump(Core* core) const {
 	mPPU->coreDump(core);
 	core->setWRAM(mWRAM);
 }
+
+void NES::loadCore(Core* core) {
+	memcpy(mWRAM, core->getWRAM(), 0x0800);
+	mCPU->loadCore(core);
+	mPPU->loadCore(core);
+}
