@@ -164,7 +164,7 @@ void NES::clock() {
 			char fname[32];
 			sprintf(fname, "nes_%010d.dump", mClocks);
 			core.dump(fname);
-			if (evt->getType()) {
+			if (evt->getType() == Event::TYPE_KILL) {
 				throw std::runtime_error("KILLED");
 			}
 			break;
