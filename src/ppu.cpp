@@ -187,7 +187,7 @@ void PPU::write(uint8_t val) {
 			// name table 1 => name table 0
 			addr -= 0x0400;
 		}
-		else if (addr >= 0x2C00 && addr <= 0x2FF) {
+		else if (addr >= 0x2C00 && addr <= 0x2FFF) {
 			// name table 3 => name table 2
 			addr -= 0x0400;
 		}
@@ -243,10 +243,11 @@ void PPU::renderBG(int x, int y) {
 	if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_BG) == 0)) {
 		return;
 	}
-
+#if 0
 	if (x == 0) {
 		printf("Line=%d, scroll=(%d, %d)\n", y, mScrollX, mScrollY);
 	}
+#endif
 	int xx = (x + mScrollX)%512; // [0 .. 512]
 	int yy = (y + mScrollY)%480; // [0 .. 512]
 
