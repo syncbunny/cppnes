@@ -35,6 +35,7 @@ public:
 
 		TYPE_CAPTURE,
 		TYPE_COREDUMP,
+		TYPE_KILL,
 	};
 protected:
 	Event(uint16_t type)
@@ -80,6 +81,13 @@ class EventCoreDump: public Event {
 public:
 	EventCoreDump()
 	:Event(TYPE_COREDUMP) {
+	}
+};
+
+class EventKill: public Event {
+public:
+	EventKill()
+	:Event(TYPE_KILL) {
 	}
 };
 

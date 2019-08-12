@@ -26,8 +26,8 @@
 #define BG_COLOR_RED            (0x20)
 #define FLAG_ENABLE_SP          (0x10)
 #define FLAG_ENABLE_BG          (0x08)
-#define FLAG_MASK_LEFT8_SP      (0x04)
-#define FLAG_MASK_LEFT8_BG      (0x02)
+#define FLAG_DRAW_LEFT8_SP      (0x04)
+#define FLAG_DRAW_LEFT8_BG      (0x02)
 #define FLAG_MONOCHROME_DISPLAY (0x01) // 0: Color Display, 1: Monochrome Display
 
 #define NAME_TABLE_BASE (0x2800)
@@ -124,6 +124,7 @@ void PPU::clock() {
 			this->startVR();
 		}
 		if (mLine >= SCAN_LINES) {
+			CLEAR_VBLANK();
 			mLine = 0;
 			this->frameEnd();
 			mFrames++;
@@ -239,7 +240,13 @@ void PPU::renderBG(int x, int y) {
 	if (mStencil[y*256 +x] & STENCIL_FRONT_SPRITE) {
 		return;
 	}
+	if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_BG) == 0)) {
+		return;
+	}
 
+	if (x == 0) {
+		printf("Line=%d, scroll=(%d, %d)\n", y, mScrollX, mScrollY);
+	}
 	int xx = (x + mScrollX)%512; // [0 .. 512]
 	int yy = (y + mScrollY)%480; // [0 .. 512]
 
@@ -330,6 +337,9 @@ void PPU::renderSprite(int y) {
 		uint8_t attr = sp->a&0x03;
 		struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE + attr*4];
 		for (int x = 0; x < 256; x++) {
+			if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_SP) == 0)) {
+				continue;
+			}
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}

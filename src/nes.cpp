@@ -158,11 +158,15 @@ void NES::clock() {
 			mPPU->capture();
 			break;
 		case Event::TYPE_COREDUMP:
+		case Event::TYPE_KILL:
 			Core core;
 			this->coreDump(&core);
 			char fname[32];
 			sprintf(fname, "nes_%010d.dump", mClocks);
 			core.dump(fname);
+			if (evt->getType()) {
+				throw std::runtime_error("KILLED");
+			}
 			break;
 		}
 		delete evt;
