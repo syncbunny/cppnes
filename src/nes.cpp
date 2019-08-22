@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "nes.h"
+#include "config.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "vppu.h"
@@ -16,6 +17,7 @@
 #include "vmapper.h"
 #include "events.h"
 #include "renderer.h"
+#include "core.h"
 
 #define FLAG6_V_MIRROR           (0x01)
 #define FLAG6_HAS_BATTARY_BACKUP (0x02)
@@ -28,18 +30,27 @@
 #define FLAG7_NES_2_0      (0x0C)
 #define FLAG7_MAPPER_HIGH  (0xF0)
 
+#define FLAG9_TV_SYSTEM (0x01) // 0: NTSC, 1: PAL
+
 NES::NES(Renderer* r) {
-	//mMapper = new VMapper();
-	mMapper = new Mapper();
+	Config* conf = Config::getInstance();
+
+	if (conf->getVarbose()) {
+		mMapper = new VMapper();
+		mPPU = new VPPU();
+	}
+	else {
+		mMapper = new Mapper();
+		mPPU = new PPU();
+	}
 	mCPU = new CPU(mMapper);
-	//mPPU = new VPPU();
-	mPPU = new PPU();
 	mAPU = new APU();
 	mPAD = new PAD();
 
 	mDClockCPU = 0;
 	mDClockPPU = 0;
 	mCartridgeMem = 0;
+	mClocks = 0;
 
 	if (r) {
 		mPPU->bindRenderer(r);
@@ -121,6 +132,13 @@ bool NES::loadCartridge(const char* path) {
 	uint8_t flag6 = mCartridgeMem[5];
 	mPPU->setMirror((flag6&1)? PPU::MIRROR_V:PPU::MIRROR_H);
 
+	uint8_t flag9 = mCartridgeMem[8];
+	if (flag9 & FLAG9_TV_SYSTEM) {
+		printf("TV=PAL\n");
+	} else {
+		printf("TV=NTSC\n");
+	}
+
 	return true;
 }
 
@@ -132,11 +150,14 @@ void NES::clock() {
 	//       Master          CPU      PPU
 	// NTSC: 21477272.72 Hz  Base/12  Base/4
 
+	Config* conf = Config::getInstance();
 	Event* evt = EventQueue::getInstance().pop();
 	if (evt) {
 		switch(evt->getType()) {
 		case Event::TYPE_NMI:
-			printf("NES::clock: NMI!\n");
+			if (conf->getVarbose()) {
+				printf("NES::clock: NMI!\n");
+			}
 			mCPU->nmi();
 			break;
 		case Event::TYPE_DMA:
@@ -145,17 +166,19 @@ void NES::clock() {
 		case Event::TYPE_CAPTURE:
 			mPPU->capture();
 			break;
+		case Event::TYPE_COREDUMP:
+		case Event::TYPE_KILL:
+			Core core;
+			this->coreDump(&core);
+			char fname[32];
+			sprintf(fname, "nes_%010d.dump", mClocks);
+			core.dump(fname);
+			if (evt->getType() == Event::TYPE_KILL) {
+				throw std::runtime_error("KILLED");
+			}
+			break;
 		}
 		delete evt;
-	}
-
-	if (mDClockCPU == 0) {
-		mCPU->clock();
-		mAPU->clock();
-		mDClockCPU = 11;
-//		this->dump6000();
-	} else {
-		mDClockCPU--;
 	}
 
 	if (mDClockPPU == 0) {
@@ -164,6 +187,16 @@ void NES::clock() {
 	} else {
 		mDClockPPU--;
 	}
+
+	if (mDClockCPU == 0) {
+		mCPU->clock();
+		mAPU->clock();
+		mDClockCPU = 11;
+	} else {
+		mDClockCPU--;
+	}
+
+	mClocks++;
 }
 
 bool NES::cartridgeHasTrainer() {
@@ -209,4 +242,16 @@ void NES::dump6000() {
 		}
 	}
 #endif
+}
+
+void NES::coreDump(Core* core) const {
+	mCPU->coreDump(core);
+	mPPU->coreDump(core);
+	core->setWRAM(mWRAM);
+}
+
+void NES::loadCore(Core* core) {
+	memcpy(mWRAM, core->getWRAM(), 0x0800);
+	mCPU->loadCore(core);
+	mPPU->loadCore(core);
 }

@@ -5,6 +5,7 @@
 #include "ppu.h"
 #include "events.h"
 #include "renderer.h"
+#include "core.h"
 
 #define CLOCKS_PAR_LINE (341)
 #define DRAWABLE_LINES (240)
@@ -25,11 +26,11 @@
 #define BG_COLOR_RED            (0x20)
 #define FLAG_ENABLE_SP          (0x10)
 #define FLAG_ENABLE_BG          (0x08)
-#define FLAG_MASK_LEFT8_SP      (0x04)
-#define FLAG_MASK_LEFT8_BG      (0x02)
+#define FLAG_DRAW_LEFT8_SP      (0x04)
+#define FLAG_DRAW_LEFT8_BG      (0x02)
 #define FLAG_MONOCHROME_DISPLAY (0x01) // 0: Color Display, 1: Monochrome Display
 
-#define NAME_TABLE_BASE (0x2800)
+#define NAME_TABLE_BASE (0x2000)
 //  +-----------+-----------+
 //  | 2 ($2800) | 3 ($2C00) |
 //  +-----------+-----------+
@@ -55,7 +56,7 @@
 #define SPRITE_ATTRIBUTE_FLIP_V (0x80)
 #define STENCIL_BACK_SPRITE (1)
 #define STENCIL_BG (2)
-#define STENCIL_FRONT_SPRITE (3)
+#define STENCIL_FRONT_SPRITE (4)
 
 const uint8_t colors[] = {
 	/* 00 */ 0x6b, 0x6b, 0x6b, 0x00, 0x10, 0x84, 0x08, 0x00, 0x8c, 0x42, 0x00, 0x7b,
@@ -103,24 +104,31 @@ PPU::~PPU() {
 	delete[] mMem;
 	delete[] mSpriteMem;
 	delete[] mScreen;
+	delete[] mStencil;
 }
 
 void PPU::clock() {
 	if (mLine == 0 && mLineClock == 0) {
 		this->frameStart();
 	}
+	if (mLineClock == 0) {
+		CLEAR_SP_HIT();
+		for (int x = 0; x < 256; x++) {
+			this->renderBG(x, mLine);
+		}
+		this->renderSprite(mLine);
+	}
 
-	this->renderBG(mLineClock, mLine);
+	//this->renderBG(mLineClock, mLine);
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
-		CLEAR_SP_HIT();
-		this->renderSprite(mLine);
 		mLineClock -= CLOCKS_PAR_LINE;
 		mLine++;
 		if (mLine == DRAWABLE_LINES) {
 			this->startVR();
 		}
 		if (mLine >= SCAN_LINES) {
+			CLEAR_VBLANK();
 			mLine = 0;
 			this->frameEnd();
 			mFrames++;
@@ -183,7 +191,7 @@ void PPU::write(uint8_t val) {
 			// name table 1 => name table 0
 			addr -= 0x0400;
 		}
-		else if (addr >= 0x2C00 && addr <= 0x2FF) {
+		else if (addr >= 0x2C00 && addr <= 0x2FFF) {
 			// name table 3 => name table 2
 			addr -= 0x0400;
 		}
@@ -194,8 +202,9 @@ void PPU::write(uint8_t val) {
 			addr -= 0x0800;
 		}
 	}
-	if (addr >= 0x3F20 && addr <= 0x3FFF) {
+	if (addr >= 0x3F00 && addr <= 0x3FFF) {
 		addr = 0x3F00 | (addr&0x001F);
+		val &= 0x3F;
 	}
 
 	mMem[addr] = val;
@@ -232,29 +241,33 @@ void PPU::renderBG(int x, int y) {
 	if (x >= 256 || y >= 240) {
 		return;
 	}
-	if (mStencil[y*256 +x] > STENCIL_BG) {
+	if (mStencil[y*256 +x] & STENCIL_FRONT_SPRITE) {
 		return;
 	}
-
-	int xx = (x + mScrollX)%512; // [0 .. 512]
-	int yy = (y + mScrollY)%480; // [0 .. 512]
-
+	if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_BG) == 0)) {
+		return;
+	}
 	int nameTableId = mCR1 & ID_NAME_TABLE_ADDR;
+
+	int scrollX = mScrollX;
+	int scrollY = mScrollY;
+	if (nameTableId == 1 || nameTableId == 3) {
+		scrollX += 256;
+	}
+	if (nameTableId == 2 || nameTableId == 3) {
+		scrollY += 240;
+	}
+
+	int xx = (x + scrollX)%512; // [0 .. 512]
+	int yy = (y + scrollY)%480; // [0 .. 512]
+
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
 
-	int mirrorHMap[] = {0, 0, 2, 2};
-	int mirrorVMap[] = {0, 1, 0, 1};
-	if (mMirror == MIRROR_H) {
-		nameTableId = mirrorHMap[nameTableId];
-	}
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorVMap[nameTableId];
-	}
-
+	nameTableId = 0;
 	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
-	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
+	int16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
 	// calc nametable address
 	int u = xx/8; // [0 .. 64]
@@ -284,17 +297,19 @@ void PPU::renderBG(int x, int y) {
 	int uu = xx%8;
 	int vv = yy%8;
 
-	struct Palette *paletteP;
+	uint8_t paletteId;
 	if (addr == this->mLastBGNameTableAddr) {
-		paletteP = mLastPaletteP;
+		paletteId = mLastPaletteId;
 	} else {
-		paletteP = this->getPalette(&mMem[nameTableBase[nameTableId]], u, v);
+		paletteId = this->getPaletteId(&mMem[nameTableBase[nameTableId]], u, v);
 	}
+	struct Palette* paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + paletteId*4];
+
 	if (this->getColor(bpTable, pat, paletteP, uu, vv, &mScreen[(y*256+x)*3])) {
-		mStencil[y*256 +x] = STENCIL_BG;
+		mStencil[y*256 +x] |= STENCIL_BG;
 	}
 
-	this->mLastPaletteP = paletteP;
+	this->mLastPaletteId = paletteId;
 	this->mLastBGNameTableAddr = addr;
 }
 
@@ -312,10 +327,10 @@ void PPU::renderSprite(int y) {
 	int u,v;
 	for (int i = 63; i >= 0; i--) {
 		struct Sprite* sp = &sprites[i];
-		if (y+1 < sp->y || y+1 >= sp->y+8 || y+1 >=240) {
+		if (y < sp->y+1 || y >= sp->y+1+8) {
 			continue;
 		}
-		v = y+1 - sp->y;
+		v = y - (sp->y+1);
 		if (sp->a & SPRITE_ATTRIBUTE_FLIP_V) {
 			v = 7-v;
 		}
@@ -324,10 +339,13 @@ void PPU::renderSprite(int y) {
 		uint8_t attr = sp->a&0x03;
 		struct Palette *paletteP = (struct Palette*)&mMem[SPRITE_PALETTE_BASE + attr*4];
 		for (int x = 0; x < 256; x++) {
+			if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_SP) == 0)) {
+				continue;
+			}
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}
-			if ((sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[(y+1)*256+x] > STENCIL_BACK_SPRITE)) {
+			if ((i != 0) && (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
 				continue;
 			}
 			u = x - sp->x;
@@ -343,18 +361,22 @@ void PPU::renderSprite(int y) {
 				continue;
 			}
 			if (i == 0) {
+			//if (i == 0 && (mStencil[y*256+x]&STENCIL_BG)) {
 				SET_SP_HIT();
+			}
+			if ((i == 0) && (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
+				continue;
 			}
 			col = paletteP->col[col]; // [00 .. 3F]
 
-			mScreen[((y+1)*256 +x)*3 +0] = colors[col*3 +0];
-			mScreen[((y+1)*256 +x)*3 +1] = colors[col*3 +1];
-			mScreen[((y+1)*256 +x)*3 +2] = colors[col*3 +2];
+			mScreen[((y)*256 +x)*3 +0] = colors[col*3 +0];
+			mScreen[((y)*256 +x)*3 +1] = colors[col*3 +1];
+			mScreen[((y)*256 +x)*3 +2] = colors[col*3 +2];
 
 			if (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) {
-				mStencil[(y+1)*256+x] = STENCIL_BACK_SPRITE;
+				mStencil[y*256+x] |= STENCIL_BACK_SPRITE;
 			} else {
-				mStencil[(y+1)*256+x] = STENCIL_FRONT_SPRITE;
+				mStencil[y*256+x] |= STENCIL_FRONT_SPRITE;
 			}
 		}
 	}
@@ -420,7 +442,7 @@ bool PPU::getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, u
  * u: [0 .. 31]
  * v: [0 .. 29]
  */
-struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
+uint8_t PPU::getPaletteId(uint8_t* base, uint8_t u, uint8_t v) {
 	uint8_t* attrBase = base+0x03C0;
 	int attrU = u/4; // [0 .. 8]
 	int attrV = v/4; // [0 .. 8]
@@ -438,9 +460,8 @@ struct Palette* PPU::getPalette(uint8_t* base, uint8_t u, uint8_t v) {
 		attr >>= 2;
 	}
 	attr = attr & 0x03; // [0 .. 3]
-	struct Palette *paletteP = (struct Palette*)&mMem[BG_PALETTE_BASE + attr*4];
 
-	return paletteP;
+	return attr;
 }
 
 void PPU::capture() {
@@ -456,3 +477,56 @@ void PPU::capture() {
         }
 }
 
+void PPU::coreDump(Core* c) const {
+	struct PPUCore _ppu;
+
+	_ppu.cr1                 = mCR1;
+	_ppu.cr2                 = mCR2;
+	_ppu.sr                  = mSR;
+	_ppu.scrollOffsetTarget  = mScrollOffsetTarget;
+	_ppu.writeAddr           = mWriteAddr;
+	_ppu.spriteMemAddr       = mSpriteMemAddr;
+	_ppu.scrollX             = mScrollX;
+	_ppu.scrollY             = mScrollY;
+	_ppu.mirror              = mMirror;
+	_ppu.line                = mLine;
+	_ppu.lineClock           = mLineClock;
+	_ppu.frames              = mFrames;
+	_ppu.writeMode           = mWriteMode;
+	_ppu.readBuffer          = mReadBuffer;
+	_ppu.lastBGNameTableAddr = mLastBGNameTableAddr;
+	_ppu.lastPaletteId       = mLastPaletteId;
+
+	memcpy(_ppu.mem, mMem, 0x4000);
+	memcpy(_ppu.spriteMem, mSpriteMem, 256);
+	memcpy(_ppu.screen, mScreen, 256*240*3);
+	memcpy(_ppu.stencil, mStencil, 256*240);
+
+	c->setPPU(_ppu);
+}
+
+void PPU::loadCore(Core* c) {
+	const struct PPUCore _ppu = c->getPPU();
+
+	this->mCR1 = _ppu.cr1;
+	this->mCR2 = _ppu.cr2;
+	this->mSR  = _ppu.sr;
+	this->mScrollOffsetTarget = _ppu.scrollOffsetTarget;
+	this->mWriteAddr          = _ppu.writeAddr;
+	this->mSpriteMemAddr      = _ppu.spriteMemAddr;
+	this->mScrollX            = _ppu.scrollX;
+	this->mScrollY            = _ppu.scrollY;
+	this->mMirror             = _ppu.mirror;
+	this->mLine               = _ppu.line;
+	this->mLineClock          = _ppu.lineClock;
+	this->mFrames             = _ppu.frames;
+	this->mWriteMode          = _ppu.writeMode;
+	this->mReadBuffer         = _ppu.readBuffer;
+	this->mLastBGNameTableAddr = _ppu.lastBGNameTableAddr;
+	this->mLastPaletteId       = _ppu.lastPaletteId;
+
+	memcpy(this->mMem,       _ppu.mem, 0x4000);
+	memcpy(this->mSpriteMem, _ppu.spriteMem, 256);
+	memcpy(this->mScreen,    _ppu.screen, 256*240*3);
+	memcpy(this->mStencil,   _ppu.stencil, 256*240);
+}

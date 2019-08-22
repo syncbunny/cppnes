@@ -3,6 +3,8 @@
 #include <cstring>
 #include <stdexcept>
 #include "cpu.h"
+#include "core.h"
+#include "config.h"
 
 const uint16_t NMI_VECTOR = 0xFFFA;
 const uint16_t RESET_VECTOR = 0xFFFC;
@@ -62,12 +64,12 @@ const uint16_t BRK_VECTOR = 0xFFFE;
 #define AND(addr) (mA &= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define ORA(addr) (mA |= mMapper->read1Byte(addr), UPDATE_NZ(mA))
 #define EOR(addr) (mA ^= mMapper->read1Byte(addr), UPDATE_NZ(mA))
-#define ADC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, mP&=IFLG_VC, _A_Pvc=mADC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP|=_A_Pvc.p_vc, UPDATE_NZ(mA))
-#define SBC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, mP&=IFLG_VC, _A_Pvc=mSBC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP|=_A_Pvc.p_vc, UPDATE_NZ(mA))
+#define ADC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, _A_Pvc=mADC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP=(mP&IFLG_VC)|(_A_Pvc.p_vc), UPDATE_NZ(mA))
+#define SBC(addr) (_mem = mMapper->read1Byte(addr), _c = (mP&FLG_C)? 1:0, _A_Pvc=mSBC_APvcTable[((uint16_t)mA*256 + _mem)*2 + _c], mA=_A_Pvc.a, mP=(mP&IFLG_VC)|(_A_Pvc.p_vc), UPDATE_NZ(mA))
 #define CMP(addr) (_a = mA, _mem = mMapper->read1Byte(addr), mP = (_a>=_mem)? SET_C():UNSET_C(),  _a-=_mem, UPDATE_NZ(_a))
 #define CPX(addr) (_x = mX, _mem = mMapper->read1Byte(addr), mP = (_x>=_mem)? SET_C():UNSET_C(),  _x-=_mem, UPDATE_NZ(_x))
 #define CPY(addr) (_y = mY, _mem = mMapper->read1Byte(addr), mP = (_y>=_mem)? SET_C():UNSET_C(),  _y-=_mem, UPDATE_NZ(_y))
-#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP = (_mem&0x80)? SET_N():UNSET_N(), mP = (_mem&0x40)? SET_V():UNSET_V(), _mem &= mA, UPDATE_Z(_mem))
+#define BIT(addr) (_mem = mMapper->read1Byte(addr), mP = (_mem&0xC0)|(mP&0x3F), _mem &= mA, UPDATE_Z(_mem))
 #define JMP(addr) (mPC = addr)
 #define JSR(addr) (PUSH2(mPC+1), mPC=addr)
 #define BCS(addr) (mPC = ((mP&FLG_C)!=0)? addr:mPC+1)
@@ -656,7 +658,43 @@ void CPU::clock() {
 	}
 	mClockRemain = clockTable[o];
 	mP |= FLG_5; // bit5 is always '1'
-	this->dump();
+
+	Config* conf = Config::getInstance();
+	if (conf->getVarbose()) { 
+		this->dump();
+	}
+}
+
+void CPU::coreDump(Core* c) const {
+	struct CPUCore _cpu;
+
+	_cpu.a           = mA;
+	_cpu.x           = mX;
+	_cpu.y           = mY;
+	_cpu.s           = mS;
+	_cpu.p           = mP;
+	_cpu.pc          = mPC;
+	_cpu.clockRemain = mClockRemain;
+	_cpu.resetFlag   = mResetFlag;
+	_cpu.NMIFlag     = mNMIFlag;
+	_cpu.BRKFlag     = mBRKFlag;
+
+	c->setCPU(_cpu);
+}
+
+void CPU::loadCore(Core* c) {
+	const struct CPUCore _cpu = c->getCPU();
+
+	this->mA           = _cpu.a;
+	this->mX           = _cpu.x;
+	this->mY           = _cpu.y;
+	this->mS           = _cpu.s;
+	this->mP           = _cpu.p;
+	this->mPC          = _cpu.pc;
+	this->mClockRemain = _cpu.clockRemain;
+	this->mResetFlag   = _cpu.resetFlag;
+	this->mNMIFlag     = _cpu.NMIFlag;
+	this->mBRKFlag     = _cpu.BRKFlag;
 }
 
 void CPU::dump() {

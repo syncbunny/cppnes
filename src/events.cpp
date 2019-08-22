@@ -4,7 +4,7 @@
 EventQueue* EventQueue::instance = 0;
 
 void EventQueue::push(Event* evt) {
-	printf("EventQueue::push (%d)\n", evt->getType());
+//	printf("EventQueue::push (%d)\n", evt->getType());
 	mQueue.push_back(evt);
 }
 
@@ -14,7 +14,7 @@ Event* EventQueue::pop() {
 	if (!mQueue.empty()) {	
 		ret = mQueue.front();
 		mQueue.pop_front();
-		printf("EventQueue::pop (%d)\n", ret->getType());
+//		printf("EventQueue::pop (%d)\n", ret->getType());
 	}
 
 	return ret;

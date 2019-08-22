@@ -2,12 +2,14 @@
 #define PPU_H
 
 #include <cstdint>
+#include <events.h>
 
 struct Palette {
         uint8_t col[4]; // col[0]: clear
 } __attribute__((packed)) ;
 
 class Renderer;
+class Core;
 
 class PPU {
 public:
@@ -52,6 +54,8 @@ public:
 	virtual uint8_t read();
 	virtual void clock();
 	virtual void capture();
+	virtual void coreDump(Core* c) const;
+	virtual void loadCore(Core* c);
 
 protected:
 	virtual void startVR();
@@ -60,7 +64,7 @@ protected:
 	virtual	void renderBG(int x, int y);
 	virtual void renderSprite(int y);
 	virtual bool getColor(uint8_t* base, uint8_t pat, const struct Palette* paletteP, uint8_t u, uint8_t v, uint8_t* rgb);
-	virtual struct Palette* getPalette(uint8_t* base, uint8_t x, uint8_t y);
+	virtual uint8_t getPaletteId(uint8_t* base, uint8_t x, uint8_t y);
 
 protected:
 	uint8_t mCR1; // Control Register
@@ -84,7 +88,7 @@ protected:
 
 	uint8_t mReadBuffer;
 	uint16_t mLastBGNameTableAddr;
-	struct Palette* mLastPaletteP;
+	uint8_t mLastPaletteId;
 
 	Renderer* mRenderer;
 };
