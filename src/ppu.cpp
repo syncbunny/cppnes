@@ -30,7 +30,7 @@
 #define FLAG_DRAW_LEFT8_BG      (0x02)
 #define FLAG_MONOCHROME_DISPLAY (0x01) // 0: Color Display, 1: Monochrome Display
 
-#define NAME_TABLE_BASE (0x2800)
+#define NAME_TABLE_BASE (0x2000)
 //  +-----------+-----------+
 //  | 2 ($2800) | 3 ($2C00) |
 //  +-----------+-----------+
@@ -104,6 +104,7 @@ PPU::~PPU() {
 	delete[] mMem;
 	delete[] mSpriteMem;
 	delete[] mScreen;
+	delete[] mStencil;
 }
 
 void PPU::clock() {
@@ -112,10 +113,13 @@ void PPU::clock() {
 	}
 	if (mLineClock == 0) {
 		CLEAR_SP_HIT();
+		for (int x = 0; x < 256; x++) {
+			this->renderBG(x, mLine);
+		}
 		this->renderSprite(mLine);
 	}
 
-	this->renderBG(mLineClock, mLine);
+	//this->renderBG(mLineClock, mLine);
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		mLineClock -= CLOCKS_PAR_LINE;
@@ -243,30 +247,27 @@ void PPU::renderBG(int x, int y) {
 	if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_BG) == 0)) {
 		return;
 	}
-#if 0
-	if (x == 0) {
-		printf("Line=%d, scroll=(%d, %d)\n", y, mScrollX, mScrollY);
-	}
-#endif
-	int xx = (x + mScrollX)%512; // [0 .. 512]
-	int yy = (y + mScrollY)%480; // [0 .. 512]
-
 	int nameTableId = mCR1 & ID_NAME_TABLE_ADDR;
+
+	int scrollX = mScrollX;
+	int scrollY = mScrollY;
+	if (nameTableId == 1 || nameTableId == 3) {
+		scrollX += 256;
+	}
+	if (nameTableId == 2 || nameTableId == 3) {
+		scrollY += 240;
+	}
+
+	int xx = (x + scrollX)%512; // [0 .. 512]
+	int yy = (y + scrollY)%480; // [0 .. 512]
+
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
 
-	int mirrorHMap[] = {0, 0, 2, 2};
-	int mirrorVMap[] = {0, 1, 0, 1};
-	if (mMirror == MIRROR_H) {
-		nameTableId = mirrorHMap[nameTableId];
-	}
-	if (mMirror == MIRROR_V) {
-		nameTableId = mirrorVMap[nameTableId];
-	}
-
+	nameTableId = 0;
 	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
-	uint16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
+	int16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
 
 	// calc nametable address
 	int u = xx/8; // [0 .. 64]
@@ -344,7 +345,7 @@ void PPU::renderSprite(int y) {
 			if (x < sp->x || x >= sp->x+8) {
 				continue;
 			}
-			if ((sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
+			if ((i != 0) && (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
 				continue;
 			}
 			u = x - sp->x;
@@ -360,7 +361,11 @@ void PPU::renderSprite(int y) {
 				continue;
 			}
 			if (i == 0) {
+			//if (i == 0 && (mStencil[y*256+x]&STENCIL_BG)) {
 				SET_SP_HIT();
+			}
+			if ((i == 0) && (sp->a & SPRITE_ATTRIBUTE_BACK_SPRITE) && (mStencil[y*256+x] & STENCIL_BG)) {
+				continue;
 			}
 			col = paletteP->col[col]; // [00 .. 3F]
 

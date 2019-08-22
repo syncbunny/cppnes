@@ -2,6 +2,7 @@
 #define PPU_H
 
 #include <cstdint>
+#include <events.h>
 
 struct Palette {
         uint8_t col[4]; // col[0]: clear

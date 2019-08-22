@@ -30,6 +30,8 @@
 #define FLAG7_NES_2_0      (0x0C)
 #define FLAG7_MAPPER_HIGH  (0xF0)
 
+#define FLAG9_TV_SYSTEM (0x01) // 0: NTSC, 1: PAL
+
 NES::NES(Renderer* r) {
 	Config* conf = Config::getInstance();
 
@@ -130,6 +132,13 @@ bool NES::loadCartridge(const char* path) {
 	uint8_t flag6 = mCartridgeMem[5];
 	mPPU->setMirror((flag6&1)? PPU::MIRROR_V:PPU::MIRROR_H);
 
+	uint8_t flag9 = mCartridgeMem[8];
+	if (flag9 & FLAG9_TV_SYSTEM) {
+		printf("TV=PAL\n");
+	} else {
+		printf("TV=NTSC\n");
+	}
+
 	return true;
 }
 
@@ -172,20 +181,19 @@ void NES::clock() {
 		delete evt;
 	}
 
-	if (mDClockCPU == 0) {
-		mCPU->clock();
-		mAPU->clock();
-		mDClockCPU = 11;
-//		this->dump6000();
-	} else {
-		mDClockCPU--;
-	}
-
 	if (mDClockPPU == 0) {
 		mPPU->clock();
 		mDClockPPU = 3;
 	} else {
 		mDClockPPU--;
+	}
+
+	if (mDClockCPU == 0) {
+		mCPU->clock();
+		mAPU->clock();
+		mDClockCPU = 11;
+	} else {
+		mDClockCPU--;
 	}
 
 	mClocks++;
