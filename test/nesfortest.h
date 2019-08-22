@@ -33,8 +33,12 @@ protected:
 	void cputest_ROR_A_3();
 	void cputest_ASL_A_1();
 	void cputest_ASL_A_2();
+	void cputest_ASL_ZP_1();
+	void cputest_ASL_ZP_2();
 	void cputest_LSR_A_1();
 	void cputest_LSR_A_2();
+	void cputest_LSR_ZP_1();
+	void cputest_LSR_ZP_2();
 	void cputest_ADC_IMM_1();
 	void cputest_ADC_IMM_2();
 	void cputest_ADC_IMM_3();
