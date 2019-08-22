@@ -88,8 +88,12 @@ void NESForTest::cputest() {
 	cputest_ROR_A_3();
 	cputest_ASL_A_1();
 	cputest_ASL_A_2();
+	cputest_ASL_ZP_1();
+	cputest_ASL_ZP_2();
 	cputest_LSR_A_1();
 	cputest_LSR_A_2();
+	cputest_LSR_ZP_1();
+	cputest_LSR_ZP_2();
 	cputest_CMP_IMM_1();
 	cputest_CMP_IMM_2();
 	cputest_CMP_IMM_3();
@@ -538,15 +542,16 @@ void NESForTest::cputest_ASL_A_1() {
 	mPROM[0] = 0x0A;
 	mTestCPU->testInit();
 	mTestCPU->setFlagC();
-	mTestCPU->setA(0x33);
+	mTestCPU->setA(0x77);
 
 	// Exec
 	mTestCPU->clock();
 
 	// Exam
 	check_eq("cputest_ASL_A_1: PC", mTestCPU->PC(), 0x8001);
-	check_eq("cputest_ASL_A_1: A", mTestCPU->A(), 0x66);
+	check_eq("cputest_ASL_A_1: A", mTestCPU->A(), 0xEE);
 	check_eq("cputest_ASL_A_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_A_2: flag N", mTestCPU->flagN(), 1);
 	check_eq("cputest_ASL_A_1: flag C", mTestCPU->flagC(), 0);
 }
 
@@ -564,7 +569,44 @@ void NESForTest::cputest_ASL_A_2() {
 	check_eq("cputest_ASL_A_2: PC", mTestCPU->PC(), 0x8001);
 	check_eq("cputest_ASL_A_2: A", mTestCPU->A(), 0x66);
 	check_eq("cputest_ASL_A_2: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_A_2: flag N", mTestCPU->flagN(), 0);
 	check_eq("cputest_ASL_A_2: flag C", mTestCPU->flagC(), 1);
+}
+
+void NESForTest::cputest_ASL_ZP_1() {
+	mWRAM[0] = 0x11;
+	mPROM[0] = 0x06;
+	mPROM[1] = 0x00;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ASL_ZP_1: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_ASL_ZP_1: WRAM[0]", mWRAM[0], 0x22);
+	check_eq("cputest_ASL_ZP_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_ZP_1: flag N", mTestCPU->flagN(), 0);
+	check_eq("cputest_ASL_ZP_1: flag C", mTestCPU->flagC(), 0);
+}
+
+void NESForTest::cputest_ASL_ZP_2() {
+	mWRAM[0] = 0xCC;
+	mPROM[0] = 0x06;
+	mPROM[1] = 0x00;
+	mTestCPU->testInit();
+	mTestCPU->clearFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_ASL_ZP_2: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_ASL_ZP_1: WRAM[0]", mWRAM[0], 0x98);
+	check_eq("cputest_ASL_ZP_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_ASL_ZP_1: flag N", mTestCPU->flagN(), 1);
+	check_eq("cputest_ASL_ZP_1: flag C", mTestCPU->flagC(), 1);
 }
 
 void NESForTest::cputest_LSR_A_1() {
@@ -599,6 +641,44 @@ void NESForTest::cputest_LSR_A_2() {
 	check_eq("cputest_LSR_A_2: A", mTestCPU->A(), 0x19);
 	check_eq("cputest_LSR_A_2: flag Z", mTestCPU->flagZ(), 0);
 	check_eq("cputest_LSR_A_2: flag C", mTestCPU->flagC(), 0);
+}
+
+void NESForTest::cputest_LSR_ZP_1() {
+	// Initialize
+	mWRAM[0] = 0x22;
+	mPROM[0] = 0x46;
+	mPROM[1] = 0x00;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_LSR_ZP_1: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_LSR_ZP_1: WRAM[0]", mWRAM[0], 0x11);
+	check_eq("cputest_LSR_ZP_1: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_LZR_ZP_1: flag N", mTestCPU->flagN(), 0);
+	check_eq("cputest_LSR_ZP_1: flag C", mTestCPU->flagC(), 0);
+}
+
+void NESForTest::cputest_LSR_ZP_2() {
+	// Initialize
+	mWRAM[0] = 0x11;
+	mPROM[0] = 0x46;
+	mPROM[1] = 0x00;
+	mTestCPU->testInit();
+	mTestCPU->setFlagC();
+
+	// Exec
+	mTestCPU->clock();
+
+	// Exam
+	check_eq("cputest_LSR_ZP_2: PC", mTestCPU->PC(), 0x8002);
+	check_eq("cputest_LSR_ZP_2: WRAM[0]", mWRAM[0], 0x08);
+	check_eq("cputest_LSR_ZP_2: flag Z", mTestCPU->flagZ(), 0);
+	check_eq("cputest_LZR_ZP_2: flag N", mTestCPU->flagN(), 0);
+	check_eq("cputest_LSR_ZP_2: flag C", mTestCPU->flagC(), 1);
 }
 
 void NESForTest::cputest_CMP_IMM_1() {
