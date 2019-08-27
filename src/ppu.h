@@ -1,8 +1,9 @@
 #ifndef PPU_H
 #define PPU_H
 
+#include <list>
 #include <cstdint>
-#include <events.h>
+#include "frameworker.h"
 
 struct Palette {
         uint8_t col[4]; // col[0]: clear
@@ -56,6 +57,7 @@ public:
 	virtual void capture();
 	virtual void coreDump(Core* c) const;
 	virtual void loadCore(Core* c);
+	virtual void addFrameWorker(FrameWorker* w);
 
 protected:
 	virtual void startVR();
@@ -91,6 +93,8 @@ protected:
 	uint8_t mLastPaletteId;
 
 	Renderer* mRenderer;
+
+	std::list<FrameWorker*> mFrameWorkers;
 };
 
 #endif
