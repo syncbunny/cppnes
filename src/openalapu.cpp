@@ -8,12 +8,6 @@ OpenALAPU::OpenALAPU()
 }
 
 OpenALAPU::~OpenALAPU() {
-	if (mData) {
-		delete[] mData;
-	}
-	if (mTriangleWeve) {
-		delete[] mTriangleWeve;
-	}
 }
 
 void OpenALAPU::initialize() {
@@ -46,26 +40,23 @@ void OpenALAPU::initialize() {
 	}
 }
 
+bool gc = false;
+
 void OpenALAPU::atFrameStart() {
 	ALenum error;
-
-	// un-queue processed buffer
-	ALint nrProcessed;
-	alGetSourcei(mSources[0], AL_BUFFERS_PROCESSED, &nrProcessed);
-	for (int i = 0; i < nrProcessed; i++) {
-		ALuint bufId;
-		alSourceUnqueueBuffers(mSources[0], 1, &bufId);
-		this->bufferProcessed(bufId);
-	}
 
 	printf("mWriteLen=%d\n", mWriteLen);
 	// en-queue buffer
 	while (mWriteLen > 0) {
 		ALuint bufId;
 		if (!this->getUnusedBuffer(&bufId)) {
+			printf("NO BUFFER\n");
 			break;
 		}
 		ALuint bufLen = mWriteLen;
+		if (bufLen > FRAME_DATA_LEN/2) {
+			bufLen = FRAME_DATA_LEN/2;
+		}
 		if (mReadPoint + bufLen >= DATA_LENGTH) {
 			bufLen = DATA_LENGTH - mReadPoint;
 		}
@@ -77,6 +68,11 @@ void OpenALAPU::atFrameStart() {
 			throw std::runtime_error(msg);
 		}
 		alSourceQueueBuffers(mSources[0], 1, &bufId);
+		if ((error = alGetError()) != AL_NO_ERROR) {
+			char msg[128];
+			sprintf(msg, "alSourceQueueBuffers() failed(%d)", error);
+			throw std::runtime_error(msg);
+		}
 		this->bufferQueued(bufId);
 
 		mWriteLen -= bufLen;
@@ -90,8 +86,22 @@ void OpenALAPU::atFrameStart() {
 	alGetSourcei(mSources[0], AL_SOURCE_STATE, &state);
 	if (state != AL_PLAYING) {
 		alSourcePlay(mSources[0]);
+		if ((error = alGetError()) != AL_NO_ERROR) {
+			char msg[128];
+			sprintf(msg, "alSourcePlay() failed(%d)", error);
+			throw std::runtime_error(msg);
+		}
 	}
+
 	printf("alu state=0x%04x\n", state);
+	// un-queue processed buffer
+	ALint nrProcessed;
+	alGetSourcei(mSources[0], AL_BUFFERS_PROCESSED, &nrProcessed);
+	for (int i = 0; i < nrProcessed; i++) {
+		ALuint bufId;
+		alSourceUnqueueBuffers(mSources[0], 1, &bufId);
+		this->bufferProcessed(bufId);
+	}
 }
 
 void OpenALAPU::bufferQueued(ALuint bufId) {

@@ -67,9 +67,9 @@ public:
 	virtual void setFrameCounter(uint8_t val);
 
 protected:
-	virtual void _clock();
-	virtual void makeTriangleWave();
-	virtual void calcTFQ();
+	virtual void triangleClock();
+	virtual void frameClock();
+	virtual void render();
 
 protected:
 	enum {
@@ -104,12 +104,21 @@ protected:
 	int mWriteLen;
 	int mReadPoint;
 
-	short* mTriangleWeve;
-	int mTriangleReadPoint;
+	int mTDClk;
+	int mTSeq[32];
+	int mTSeqIndex;
 	int mTFQ;
+	int mTTimer;
+	int mTChVal;
+
+	int mTLen;
 
 	int mClockCounter;
 	int mDClock;
+
+	int mRenderClock;
+	int mNextRenderClock;
+	int mCPUfq;
 };
 
 #endif

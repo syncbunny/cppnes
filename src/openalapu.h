@@ -22,7 +22,7 @@ protected:
 
 protected:
 	enum {
-		NUM_BUFFERS = 4,
+		NUM_BUFFERS = 16,
 		FRAME_DATA_LEN = 750, // 44100/60
 	};
 	struct BufferInfo {
