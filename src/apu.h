@@ -69,6 +69,7 @@ public:
 protected:
 	virtual void triangleClock();
 	virtual void frameClock();
+	virtual void triangleLinerCounterClock();
 	virtual void render();
 
 protected:
@@ -112,9 +113,12 @@ protected:
 	int mTChVal;
 
 	int mTLen;
+	int mTLCnt;
+	int mTLCntReload;
 
-	int mClockCounter;
-	int mDClock;
+	// FrameSequencer stuff
+	int mDFrameClock;
+	int mFrameSQCount; // [0, 1, 2, 3] or [0, 1, 2, 3, 4]
 
 	int mRenderClock;
 	int mNextRenderClock;

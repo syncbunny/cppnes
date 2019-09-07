@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "apu.h"
 
+// $4008
+#define TWC_CTL      (0x80)
+#define TWC_VAL      (0x7F)
+
 // $4015
 #define CH_CTL_DMC   (0x10)
 #define CH_CTL_NOIZE (0x08)
@@ -8,7 +12,7 @@
 #define CH_CTL_SQ2   (0x02)
 #define CH_CTL_SQ1   (0x01)
 
-// $4017
+// $4017 (mFrameCounter)
 #define SEQUENCER_MODE (0x80)	// 0: 4-step, 1: 5-step
 #define NO_IRQ (0x40)
 
@@ -22,8 +26,6 @@ int gLengthVal[] = {
 
 APU::APU()
 :mData(0) {
-	mDClock = 0;
-
 	mData = new short[DATA_LENGTH];
 	for (int i = 0; i < DATA_LENGTH; i++) {
 		mData[i] = 0;
@@ -32,6 +34,8 @@ APU::APU()
 	mReadPoint = 0;
 	mWritePoint = 0;
 	mWriteLen = 0;
+	mDFrameClock = 0;
+	mFrameSQCount = 0;
 
 	mTTimer = 0;
 	mTSeq[0] = 0x0F;
@@ -69,6 +73,8 @@ APU::APU()
 	mTSeqIndex = 0;
 	mTChVal = 0;
 	mTLen = 0;
+	mTLCnt = 0;
+	mTLCntReload = 0;
 
 	mCPUfq = CPU_FQ;
 	mNextRenderClock = mCPUfq/RENDER_FQ;
@@ -82,11 +88,11 @@ APU::~APU() {
 }
 
 void APU::clock() {
-	if (mDClock == 7456) {
+	if (mDFrameClock == 7456) {
 		frameClock();
-		mDClock = 0;
+		mDFrameClock= 0;
 	} else {
-		mDClock++;
+		mDFrameClock++;
 	}
 
 	triangleClock();
@@ -116,7 +122,7 @@ void APU::triangleClock() {
 	mTDClk--;
 	if (mTDClk == 0) {
 		mTChVal = mTSeq[mTSeqIndex]*4096-32767;
-		if (mTLen != 0) {
+		if (mTLen != 0 && mTLCnt != 0) {
 			mTSeqIndex++;
 		}
 		if (mTSeqIndex >= 32) {
@@ -131,16 +137,78 @@ void APU::triangleClock() {
 		mTChVal = 0;
 	} else {
 		mTChVal = mTSeq[mTSeqIndex]*4096-32767;
+		mTChVal /= 4;
 	}
 }
 
 void APU::frameClock() {
-	if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+	if ((mFrameCounter & SEQUENCER_MODE) == 0) {
+		// 4-Step
+		switch (mFrameSQCount) {
+		case 0:
+			this->triangleLinerCounterClock();
+			mFrameSQCount = 1;
+			break;
+		case 1:
+			this->triangleLinerCounterClock();
+			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			mFrameSQCount = 2;
+			break;
+		case 2:
+			this->triangleLinerCounterClock();
+			mFrameSQCount = 3;
+			break;
+		case 3:
+			this->triangleLinerCounterClock();
+			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			mFrameSQCount = 0;
+			break;
+		}
+	} else {
+		// 5-Step
+		switch (mFrameSQCount) {
+		case 0:
+			this->triangleLinerCounterClock();
+			mFrameSQCount = 1;
+			break;
+		case 1:
+			this->triangleLinerCounterClock();
+			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			mFrameSQCount = 2;
+			break;
+		case 2:
+			this->triangleLinerCounterClock();
+			mFrameSQCount = 3;
+			break;
+		case 3:
+			mFrameSQCount = 4;
+			break;
+		case 4:
+			this->triangleLinerCounterClock();
+			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			mFrameSQCount = 0;
+			break;
+		}
+	}
+}
+
+void APU::triangleLinerCounterClock() {
+	if (mTLCntReload) {
+		mTLCnt = mTWC & TWC_VAL;
+	} else {
+		if (mTLCnt > 0) {
+			mTLCnt--;
+		}
+	}
+	if ((mTWC & TWC_CTL) == 0) {
+		mTLCntReload = 0;
+	}
 }
 
 void APU::setFrameCounter(uint8_t val) {
 	mFrameCounter = val;
-	mDClock = 0;
+	mDFrameClock = 0;
+	mFrameSQCount = 0;
 }
 
 void APU::setTWC(uint8_t val) {
@@ -167,5 +235,6 @@ void APU::setTWFQ2(uint8_t val) {
 	mTDClk |= mTWFQ1;
 
 	mTLen = gLengthVal[mTWFQ2>>3];
+	mTLCntReload = 1;
 }
 
