@@ -16,12 +16,8 @@ public:
 	virtual void setSW1C2(uint8_t val) {
 		mSW1C2 = val;
 	}
-	virtual void setSW1FQ1(uint8_t val) {
-		mSW1FQ1 = val;
-	}
-	virtual void setSW1FQ2(uint8_t val) {
-		mSW1FQ2 = val;
-	}
+	virtual void setSW1FQ1(uint8_t val);
+	virtual void setSW1FQ2(uint8_t val);
 	virtual void setSW2C1(uint8_t val) {
 		mSW2C1 = val;
 	}
@@ -67,6 +63,7 @@ public:
 	virtual void setFrameCounter(uint8_t val);
 
 protected:
+	virtual void square1Clock();
 	virtual void triangleClock();
 	virtual void frameClock();
 	virtual void triangleLinerCounterClock();
@@ -104,6 +101,12 @@ protected:
 	int mWritePoint;
 	int mWriteLen;
 	int mReadPoint;
+
+	int mSWClock;
+	int mSW1DClk;
+	int mSW1Len;
+	int mSW1Index;
+	int mSW1ChVal;
 
 	int mTDClk;
 	int mTSeq[32];

@@ -19,10 +19,17 @@
 #define CPU_FQ (1789772)	// NTSC
 #define RENDER_FQ (44100)
 
+#define CALC_SW1DClk()  (mSW1DClk = mSW1FQ2 & 0x07, mSW1DClk <<=8, mSW1DClk |= mSW1FQ1)
+
 int gLengthVal[] = {
 /* 00-0F */  10,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
 /* 10-1F */  12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
+
+int gSQ12Val[] = {0, 1, 0, 0, 0, 0, 0, 0};
+int gSQ25Val[] = {0, 1, 1, 0, 0, 0, 0, 0};
+int gSQ50Val[] = {0, 1, 1, 1, 1, 0, 0, 0};
+int gSQ75Val[] = {0, 1, 1, 1, 1, 1, 1, 0};
 
 APU::APU()
 :mData(0) {
@@ -36,6 +43,11 @@ APU::APU()
 	mWriteLen = 0;
 	mDFrameClock = 0;
 	mFrameSQCount = 0;
+
+	mSWClock = 0;
+	mSW1Len = 0;
+	mSW1ChVal = 0;
+	mSW1Index = 0;
 
 	mTTimer = 0;
 	mTSeq[0] = 0x0F;
@@ -71,6 +83,7 @@ APU::APU()
 	mTSeq[30] = 0x0E;
 	mTSeq[31] = 0x0F;
 	mTSeqIndex = 0;
+	mTDClk = 0;
 	mTChVal = 0;
 	mTLen = 0;
 	mTLCnt = 0;
@@ -95,6 +108,12 @@ void APU::clock() {
 		mDFrameClock++;
 	}
 
+	if (mSWClock) {
+		square1Clock();
+		mSWClock = 0;
+	} else {
+		mSWClock = 1;
+	}
 	triangleClock();
 
 	mRenderClock++;
@@ -109,7 +128,7 @@ void APU::clock() {
 
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
-	mData[mWritePoint] = mTChVal;
+	mData[mWritePoint] = mTChVal + mSW1ChVal;
 
 	mWriteLen++;
 	mWritePoint++;
@@ -118,10 +137,35 @@ void APU::render() {
 	}
 }
 
+void APU::square1Clock() {
+	if (mSW1DClk > 0) {
+		mSW1DClk--;
+	}
+	if (mSW1DClk == 0) {
+		mSW1ChVal = gSQ50Val[mSW1Index]*65535 - 32767;
+		mSW1ChVal /= 4;
+		if (mSW1Len != 0) {
+			mSW1Index++;
+		}
+		if (mSW1Index >= 8) {
+			mSW1Index = 0;
+		}
+		printf("mSQ1Index=%d, mSW1ChVal=%d\n", mSW1Index, mSW1ChVal);
+		CALC_SW1DClk();
+	}
+
+	if ((mChCtrl & CH_CTL_SQ1) == 0) {
+		mSW1ChVal = 0;
+	}
+}
+
 void APU::triangleClock() {
-	mTDClk--;
+	if (mTDClk > 0) {
+		mTDClk--;
+	}
 	if (mTDClk == 0) {
 		mTChVal = mTSeq[mTSeqIndex]*4096-32767;
+		mTChVal /= 4;
 		if (mTLen != 0 && mTLCnt != 0) {
 			mTSeqIndex++;
 		}
@@ -135,9 +179,6 @@ void APU::triangleClock() {
 
 	if ((mChCtrl & CH_CTL_TRI) == 0) {
 		mTChVal = 0;
-	} else {
-		mTChVal = mTSeq[mTSeqIndex]*4096-32767;
-		mTChVal /= 4;
 	}
 }
 
@@ -152,6 +193,7 @@ void APU::frameClock() {
 		case 1:
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
@@ -161,6 +203,7 @@ void APU::frameClock() {
 		case 3:
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 0;
 			break;
 		}
@@ -174,6 +217,7 @@ void APU::frameClock() {
 		case 1:
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
@@ -186,6 +230,7 @@ void APU::frameClock() {
 		case 4:
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
+			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 0;
 			break;
 		}
@@ -209,6 +254,18 @@ void APU::setFrameCounter(uint8_t val) {
 	mFrameCounter = val;
 	mDFrameClock = 0;
 	mFrameSQCount = 0;
+}
+
+void APU::setSW1FQ1(uint8_t val) {
+	mSW1FQ1 = val;
+	CALC_SW1DClk();
+}
+
+void APU::setSW1FQ2(uint8_t val) {
+	mSW1FQ2 = val;
+	CALC_SW1DClk();
+
+	mSW1Len = gLengthVal[mSW1FQ2>>3];
 }
 
 void APU::setTWC(uint8_t val) {
