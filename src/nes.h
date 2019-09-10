@@ -42,6 +42,7 @@ protected:
 
 	int mDClockCPU;
 	int mDClockPPU;
+	int mDClockAPU;
 	int mDMAWait;
 
 	uint32_t mClocks;

@@ -3,10 +3,10 @@ CXXFLAGS=-std=c++11 -c -I../src -Wall -O -DGL_SILENCE_DEPRECATION
 LD=clang++
 LDFLAGS=
 LIBS=-lglfw -lGLEW
-FWS=-framework OpenGL -framework CoreVideo -framework IOKit -framework Cocoa
+FWS=-framework OpenGL -framework CoreVideo -framework IOKit -framework Cocoa -framework OpenAL
 
 TARGET=nes
-OBJS=main.o config.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o pad.o vpad.o events.o renderer.o core.o glfw.o glfwrenderer.o
+OBJS=main.o config.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o openalapu.o pad.o vpad.o events.o renderer.o core.o glfw.o glfwrenderer.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS} ${FWS}
@@ -15,7 +15,7 @@ main.o:main.cpp config.h core.h cpu.h nes.h ppu.h apu.h mapper.h
 	${CXX} ${CXXFLAGS} main.cpp
 config.o:config.cpp config.h
 	${CXX} ${CXXFLAGS} config.cpp
-nes.o: nes.cpp nes.h config.h cpu.h ppu.h vppu.h mapper.h vmapper.h core.h
+nes.o: nes.cpp nes.h config.h cpu.h ppu.h openalapu.h vppu.h mapper.h vmapper.h core.h
 	${CXX} ${CXXFLAGS} nes.cpp
 mapper.o: mapper.cpp mapper.h ppu.h cpu.h
 	${CXX} ${CXXFLAGS} mapper.cpp
@@ -23,12 +23,14 @@ vmapper.o: vmapper.cpp vmapper.h mapper.h
 	${CXX} ${CXXFLAGS} vmapper.cpp
 cpu.o: cpu.cpp cpu.h config.h core.h
 	${CXX} ${CXXFLAGS} cpu.cpp
-ppu.o: ppu.cpp ppu.h events.h renderer.h core.h
+ppu.o: ppu.cpp ppu.h events.h renderer.h frameworker.h core.h
 	${CXX} ${CXXFLAGS} ppu.cpp
 vppu.o: vppu.cpp vppu.h ppu.h
 	${CXX} ${CXXFLAGS} vppu.cpp
 apu.o: apu.cpp apu.h
 	${CXX} ${CXXFLAGS} apu.cpp
+openalapu.o: openalapu.cpp openalapu.h apu.h frameworker.h
+	${CXX} ${CXXFLAGS} openalapu.cpp
 pad.o: pad.cpp pad.h
 	${CXX} ${CXXFLAGS} pad.cpp
 vpad.o: vpad.cpp vpad.h pad.h

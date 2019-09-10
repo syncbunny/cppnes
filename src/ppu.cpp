@@ -410,6 +410,12 @@ void PPU::frameStart() {
 		}
 	}
 	memset(mStencil, 0, 256*240);
+
+	std::list<FrameWorker*>::iterator it;
+	for (it = mFrameWorkers.begin(); it != mFrameWorkers.end(); ++it) {
+		FrameWorker* fw = *it;
+		fw->atFrameStart();
+	}
 }
 
 void PPU::frameEnd() {
@@ -529,4 +535,8 @@ void PPU::loadCore(Core* c) {
 	memcpy(this->mSpriteMem, _ppu.spriteMem, 256);
 	memcpy(this->mScreen,    _ppu.screen, 256*240*3);
 	memcpy(this->mStencil,   _ppu.stencil, 256*240);
+}
+
+void PPU::addFrameWorker(FrameWorker* w) {
+	mFrameWorkers.push_back(w);
 }

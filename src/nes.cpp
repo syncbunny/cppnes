@@ -11,6 +11,7 @@
 #include "ppu.h"
 #include "vppu.h"
 #include "apu.h"
+#include "openalapu.h"
 #include "pad.h"
 #include "vpad.h"
 #include "mapper.h"
@@ -44,17 +45,20 @@ NES::NES(Renderer* r) {
 		mPPU = new PPU();
 	}
 	mCPU = new CPU(mMapper);
-	mAPU = new APU();
+	OpenALAPU* openalAPU = new OpenALAPU();
+	mAPU = openalAPU;
 	mPAD = new PAD();
 
 	mDClockCPU = 0;
 	mDClockPPU = 0;
+	mDClockAPU = 0;
 	mCartridgeMem = 0;
 	mClocks = 0;
 
 	if (r) {
 		mPPU->bindRenderer(r);
 	}
+	mPPU->addFrameWorker(openalAPU);
 	mWRAM = new uint8_t[0x0800];
 	for (int i = 0; i < 0x0800; i++) mWRAM[i] = 0x4F;
 	mERAM = new uint8_t[0x2000];
@@ -147,8 +151,8 @@ void NES::reset() {
 }
 
 void NES::clock() {
-	//       Master          CPU      PPU
-	// NTSC: 21477272.72 Hz  Base/12  Base/4
+	//       Master          CPU      PPU    APU
+	// NTSC: 21477272.72 Hz  Base/12  Base/4 Base/(12*7457)
 
 	Config* conf = Config::getInstance();
 	Event* evt = EventQueue::getInstance().pop();
@@ -181,6 +185,13 @@ void NES::clock() {
 		delete evt;
 	}
 
+	if (mDClockAPU == 0) {
+		mAPU->clock();
+		mDClockAPU = 11;
+	} else {
+		mDClockAPU--;
+	}
+
 	if (mDClockPPU == 0) {
 		mPPU->clock();
 		mDClockPPU = 3;
@@ -190,7 +201,6 @@ void NES::clock() {
 
 	if (mDClockCPU == 0) {
 		mCPU->clock();
-		mAPU->clock();
 		mDClockCPU = 11;
 	} else {
 		mDClockCPU--;

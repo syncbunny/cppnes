@@ -34,15 +34,9 @@ public:
 	virtual void setSW2FQ2(uint8_t val) {
 		mSW2FQ2 = val;
 	}
-	virtual void setTWC(uint8_t val) {
-		mTWC = val;
-	}
-	virtual void setTWFQ1(uint8_t val) {
-		mTWFQ1 = val;
-	}
-	virtual void setTWFQ2(uint8_t val) {
-		mTWFQ2 = val;
-	}
+	virtual void setTWC(uint8_t val);
+	virtual void setTWFQ1(uint8_t val);
+	virtual void setTWFQ2(uint8_t val);
 	virtual void setNZC(uint8_t val) {
 		mNZC = val;
 	}
@@ -67,12 +61,22 @@ public:
 	virtual void setChCtrl(uint8_t val) {
 		mChCtrl = val;
 	}
-	virtual void setFrameCounter(uint8_t val) {
-		mFrameCounter = val;
-	}
 	virtual uint8_t getChCtrl() const {
 		return mChCtrl;
 	}
+	virtual void setFrameCounter(uint8_t val);
+
+protected:
+	virtual void triangleClock();
+	virtual void frameClock();
+	virtual void triangleLinerCounterClock();
+	virtual void render();
+
+protected:
+	enum {
+		DATA_LENGTH = 44100,
+		CLOCK_DATA_LENGTH = 184,
+	};
 
 protected:
 	uint8_t mSW1C1;        // 0x4000
@@ -94,9 +98,31 @@ protected:
 	uint8_t mDMC3;         // 0x4012
 	uint8_t mDMC4;         // 0x4013
 	uint8_t mChCtrl;       // 0x4015
-	uint8_t mFrameCounter;
+	uint8_t mFrameCounter; // 0x4017
 
-	int mClockCounter;
+	short* mData;
+	int mWritePoint;
+	int mWriteLen;
+	int mReadPoint;
+
+	int mTDClk;
+	int mTSeq[32];
+	int mTSeqIndex;
+	int mTFQ;
+	int mTTimer;
+	int mTChVal;
+
+	int mTLen;
+	int mTLCnt;
+	int mTLCntReload;
+
+	// FrameSequencer stuff
+	int mDFrameClock;
+	int mFrameSQCount; // [0, 1, 2, 3] or [0, 1, 2, 3, 4]
+
+	int mRenderClock;
+	int mNextRenderClock;
+	int mCPUfq;
 };
 
 #endif
