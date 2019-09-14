@@ -51,6 +51,7 @@ APU::APU()
 	mFrameSQCount = 0;
 
 	mSWClock = 0;
+	mSW1DClk = 0;
 	mSW1Len = 0;
 	mSW1ChVal = 0;
 	mSW1Index = 0;
@@ -177,6 +178,7 @@ void APU::square1Clock() {
 			mSW1Index = 0;
 		}
 		mSW1DClk = mSW1FQ;
+		printf("mSQ1DClk=%d\n", mSW1DClk);
 	}
 
 	if ((mChCtrl & CH_CTL_SQ1) == 0) {
@@ -362,10 +364,17 @@ void APU::Sweep::clock() {
 		return;
 	}
 
+	if (mFQ < 8 || mFQ > 0x7ff) {
+		return;
+	}
+	int newFQ;
 	if ((mReg & SWEEP_DIR) == 0) {	
-		mFQ = mFQ + (mFQ >> val);
+		newFQ = mFQ + (mFQ >> val);
 	} else {
-		mFQ = mFQ - (mFQ >> val);
+		newFQ = mFQ - (mFQ >> val);
+	}
+	if (newFQ >= 8 && newFQ <= 0x7ff) {
+		mFQ = newFQ;
 	}
 }
 
