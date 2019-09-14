@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include "apu.h"
 
+// $4001, $4005
+#define SWEEP_ENABLE (0x80)
+#define SWEEP_FQ     (0x70)
+#define SWEEP_DIR    (0x08)
+#define SWEEP_VAL    (0x07)
+
 // $4008
 #define TWC_CTL      (0x80)
 #define TWC_VAL      (0x7F)
@@ -19,7 +25,7 @@
 #define CPU_FQ (1789772)	// NTSC
 #define RENDER_FQ (44100)
 
-#define CALC_SW1DClk()  (mSW1DClk = mSW1FQ2 & 0x07, mSW1DClk <<=8, mSW1DClk |= mSW1FQ1)
+#define CALC_SW1FQ()  (mSW1FQ = mSW1FQ2 & 0x07, mSW1FQ <<=8, mSW1FQ |= mSW1FQ1)
 
 int gLengthVal[] = {
 /* 00-0F */  10,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
@@ -29,7 +35,7 @@ int gLengthVal[] = {
 int gSQ12Val[] = {0, 1, 0, 0, 0, 0, 0, 0};
 int gSQ25Val[] = {0, 1, 1, 0, 0, 0, 0, 0};
 int gSQ50Val[] = {0, 1, 1, 1, 1, 0, 0, 0};
-int gSQ75Val[] = {0, 1, 1, 1, 1, 1, 1, 0};
+int gSQ75Val[] = {1, 0, 0, 0, 0, 0, 0, 1};
 
 APU::APU()
 :mData(0) {
@@ -92,12 +98,17 @@ APU::APU()
 	mCPUfq = CPU_FQ;
 	mNextRenderClock = mCPUfq/RENDER_FQ;
 	mRenderClock = 0;
+
+	mSweep1 = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
+	mEnv1 = new Envelope();
 }
 
 APU::~APU() {
 	if (mData) {
 		delete[] mData;
 	}
+	delete mSweep1;
+	delete mEnv1;
 }
 
 void APU::clock() {
@@ -142,7 +153,22 @@ void APU::square1Clock() {
 		mSW1DClk--;
 	}
 	if (mSW1DClk == 0) {
-		mSW1ChVal = gSQ50Val[mSW1Index]*65535 - 32767;
+		int* sqval;
+		switch(mSW1C1 >> 6) {
+		case 0x00:
+			sqval = gSQ12Val;
+			break;
+		case 0x01:
+			sqval = gSQ25Val;
+			break;
+		case 0x02:
+			sqval = gSQ50Val;
+			break;
+		case 0x03:
+			sqval = gSQ75Val;
+			break;
+		}
+		mSW1ChVal = sqval[mSW1Index]*65535 - 32767;
 		mSW1ChVal /= 4;
 		if (mSW1Len != 0) {
 			mSW1Index++;
@@ -150,11 +176,13 @@ void APU::square1Clock() {
 		if (mSW1Index >= 8) {
 			mSW1Index = 0;
 		}
-		printf("mSQ1Index=%d, mSW1ChVal=%d\n", mSW1Index, mSW1ChVal);
-		CALC_SW1DClk();
+		mSW1DClk = mSW1FQ;
 	}
 
 	if ((mChCtrl & CH_CTL_SQ1) == 0) {
+		mSW1ChVal = 0;
+	}
+	if (mSW1FQ < 8 || mSW1FQ > 0x7FF) {
 		mSW1ChVal = 0;
 	}
 }
@@ -187,20 +215,26 @@ void APU::frameClock() {
 		// 4-Step
 		switch (mFrameSQCount) {
 		case 0:
+			mEnv1->clock();
+			mSweep1->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
 		case 1:
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
+			mEnv1->clock();
+			mSweep1->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
 		case 3:
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
@@ -211,16 +245,20 @@ void APU::frameClock() {
 		// 5-Step
 		switch (mFrameSQCount) {
 		case 0:
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
 		case 1:
+			mSweep1->clock();
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
@@ -228,6 +266,8 @@ void APU::frameClock() {
 			mFrameSQCount = 4;
 			break;
 		case 4:
+			mSweep1->clock();
+			mEnv1->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
@@ -258,14 +298,16 @@ void APU::setFrameCounter(uint8_t val) {
 
 void APU::setSW1FQ1(uint8_t val) {
 	mSW1FQ1 = val;
-	CALC_SW1DClk();
+	CALC_SW1FQ();
 }
 
 void APU::setSW1FQ2(uint8_t val) {
 	mSW1FQ2 = val;
-	CALC_SW1DClk();
+	CALC_SW1FQ();
 
 	mSW1Len = gLengthVal[mSW1FQ2>>3];
+
+	mSweep1->reset();
 }
 
 void APU::setTWC(uint8_t val) {
@@ -293,5 +335,46 @@ void APU::setTWFQ2(uint8_t val) {
 
 	mTLen = gLengthVal[mTWFQ2>>3];
 	mTLCntReload = 1;
+}
+
+APU::Sweep::Sweep(uint8_t& reg, int& fq, int& len)
+:mReg(reg), mFQ(fq), mSWLen(len) {
+}
+
+APU::Sweep::~Sweep() {
+}
+
+void APU::Sweep::reset() {
+	mDClock = (mReg & SWEEP_FQ) >> 4;
+}
+
+void APU::Sweep::clock() {
+	if (this->mDClock > 0) {
+		this->mDClock--;
+		return;
+	}
+
+	if ((mReg & SWEEP_ENABLE) == 0) {
+		return;
+	}
+	int val = mReg & SWEEP_VAL;
+	if (val == 0) {
+		return;
+	}
+
+	if ((mReg & SWEEP_DIR) == 0) {	
+		mFQ = mFQ + (mFQ >> val);
+	} else {
+		mFQ = mFQ - (mFQ >> val);
+	}
+}
+
+APU::Envelope::Envelope() {
+}
+
+APU::Envelope::~Envelope() {
+}
+
+void APU::Envelope::clock() {
 }
 

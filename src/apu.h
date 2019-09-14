@@ -103,13 +103,17 @@ protected:
 	int mReadPoint;
 
 	int mSWClock;
+	int mSW1FQ;
 	int mSW1DClk;
+	int mSW1SwpClk;
 	int mSW1Len;
 	int mSW1Index;
 	int mSW1ChVal;
+	int mSW1EnvCounter;
+	int mSW1EnvDClk;
 
 	int mTDClk;
-	int mTSeq[32];
+	int mTSeq[32];                                    
 	int mTSeqIndex;
 	int mTFQ;
 	int mTTimer;
@@ -126,6 +130,39 @@ protected:
 	int mRenderClock;
 	int mNextRenderClock;
 	int mCPUfq;
+
+	class Sweep {
+	public:
+		Sweep(uint8_t& reg, int& fq, int& len);
+		virtual ~Sweep();
+
+	public:
+		void reset();
+		void clock();
+
+	protected:
+		uint8_t& mReg;
+		int& mFQ;
+		int& mSWLen;
+
+		int mDClock;
+		int mLen;
+		int mDirection; // 0: down, 1: up
+	};
+
+	class Envelope {
+	public:
+		Envelope();
+		virtual ~Envelope();
+
+	public:
+		void clock();
+
+	protected:
+	};
+
+	Sweep*    mSweep1;
+	Envelope* mEnv1;
 };
 
 #endif
