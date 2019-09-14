@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include "apu.h"
 
+// $4000, $4004
+#define ENVELOPE_LOOP   (0x20)
+#define ENVELOPE_ENABLE (0x10)
+#define ENVELOPE_FQ     (0x0F)
+
 // $4001, $4005
 #define SWEEP_ENABLE (0x80)
 #define SWEEP_FQ     (0x70)
@@ -101,7 +106,7 @@ APU::APU()
 	mRenderClock = 0;
 
 	mSweep1 = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
-	mEnv1 = new Envelope();
+	mEnv1 = new Envelope(this->mSW1C1);
 }
 
 APU::~APU() {
@@ -178,12 +183,14 @@ void APU::square1Clock() {
 			mSW1Index = 0;
 		}
 		mSW1DClk = mSW1FQ;
-		printf("mSQ1DClk=%d\n", mSW1DClk);
 	}
 
 	if ((mChCtrl & CH_CTL_SQ1) == 0) {
 		mSW1ChVal = 0;
 	}
+	uint8_t vol = mEnv1->getVol();
+	mSW1ChVal *= vol;
+	mSW1ChVal /= 0x0F;
 	if (mSW1FQ < 8 || mSW1FQ > 0x7FF) {
 		mSW1ChVal = 0;
 	}
@@ -310,6 +317,7 @@ void APU::setSW1FQ2(uint8_t val) {
 	mSW1Len = gLengthVal[mSW1FQ2>>3];
 
 	mSweep1->reset();
+	mEnv1->reset();
 }
 
 void APU::setTWC(uint8_t val) {
@@ -378,12 +386,39 @@ void APU::Sweep::clock() {
 	}
 }
 
-APU::Envelope::Envelope() {
+APU::Envelope::Envelope(uint8_t& reg)
+: mReg(reg){
 }
 
 APU::Envelope::~Envelope() {
 }
 
-void APU::Envelope::clock() {
+void APU::Envelope::reset() {
+	mDClock = mReg & ENVELOPE_FQ;
+	mVal = 0x0F;
 }
 
+void APU::Envelope::clock() {
+	if (mDClock > 0) {
+		mDClock--;
+		return;
+	}
+	if ((mReg & ENVELOPE_ENABLE) == 0) {
+		return;
+	}
+	if (mVal > 0) {
+		mVal--;
+	}
+	if (mVal == 0 && (mReg & ENVELOPE_LOOP)) {
+		mDClock = mReg & ENVELOPE_FQ;
+		mVal = 0x0F;
+	}
+}
+
+uint8_t APU::Envelope::getVol() {
+	if (mReg & ENVELOPE_ENABLE) {
+		return mVal;
+	} else {
+		return (mReg & 0x0F);
+	}
+}

@@ -152,13 +152,19 @@ protected:
 
 	class Envelope {
 	public:
-		Envelope();
+		Envelope(uint8_t& reg);
 		virtual ~Envelope();
 
 	public:
+		void reset();
 		void clock();
+		uint8_t getVol();
 
 	protected:
+		uint8_t& mReg;
+
+		int mDClock;
+		uint8_t   mVal;
 	};
 
 	Sweep*    mSweep1;
