@@ -388,19 +388,21 @@ void APU::Sweep::clock() {
 
 APU::Envelope::Envelope(uint8_t& reg)
 : mReg(reg){
+	mDClock = 0;
+	mVal = 0;
 }
 
 APU::Envelope::~Envelope() {
 }
 
 void APU::Envelope::reset() {
-	mDClock = mReg & ENVELOPE_FQ;
+	this->mDClock = mReg & ENVELOPE_FQ;
 	mVal = 0x0F;
 }
 
 void APU::Envelope::clock() {
 	if (mDClock > 0) {
-		mDClock--;
+		this->mDClock--;
 		return;
 	}
 	if ((mReg & ENVELOPE_ENABLE) == 0) {
@@ -410,7 +412,7 @@ void APU::Envelope::clock() {
 		mVal--;
 	}
 	if (mVal == 0 && (mReg & ENVELOPE_LOOP)) {
-		mDClock = mReg & ENVELOPE_FQ;
+		this->mDClock = mReg & ENVELOPE_FQ;
 		mVal = 0x0F;
 	}
 }
