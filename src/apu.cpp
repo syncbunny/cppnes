@@ -174,8 +174,9 @@ void APU::square1Clock() {
 			sqval = gSQ75Val;
 			break;
 		}
-		mSW1ChVal = sqval[mSW1Index]*65535 - 32767;
-		mSW1ChVal /= 4;
+		uint8_t vol = mEnv1->getVol();
+		mSW1ChVal = sqval[mSW1Index]*vol*256;
+		mSW1ChVal -= vol*128;
 		if (mSW1Len != 0) {
 			mSW1Index++;
 		}
@@ -188,9 +189,7 @@ void APU::square1Clock() {
 	if ((mChCtrl & CH_CTL_SQ1) == 0) {
 		mSW1ChVal = 0;
 	}
-	uint8_t vol = mEnv1->getVol();
-	mSW1ChVal *= vol;
-	mSW1ChVal /= 0x0F;
+
 	if (mSW1FQ < 8 || mSW1FQ > 0x7FF) {
 		mSW1ChVal = 0;
 	}
@@ -201,8 +200,7 @@ void APU::triangleClock() {
 		mTDClk--;
 	}
 	if (mTDClk == 0) {
-		mTChVal = mTSeq[mTSeqIndex]*4096-32767;
-		mTChVal /= 4;
+		mTChVal = mTSeq[mTSeqIndex]*512-256;
 		if (mTLen != 0 && mTLCnt != 0) {
 			mTSeqIndex++;
 		}
