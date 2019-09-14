@@ -16,12 +16,8 @@ public:
 	virtual void setSW1C2(uint8_t val) {
 		mSW1C2 = val;
 	}
-	virtual void setSW1FQ1(uint8_t val) {
-		mSW1FQ1 = val;
-	}
-	virtual void setSW1FQ2(uint8_t val) {
-		mSW1FQ2 = val;
-	}
+	virtual void setSW1FQ1(uint8_t val);
+	virtual void setSW1FQ2(uint8_t val);
 	virtual void setSW2C1(uint8_t val) {
 		mSW2C1 = val;
 	}
@@ -67,6 +63,7 @@ public:
 	virtual void setFrameCounter(uint8_t val);
 
 protected:
+	virtual void square1Clock();
 	virtual void triangleClock();
 	virtual void frameClock();
 	virtual void triangleLinerCounterClock();
@@ -105,8 +102,18 @@ protected:
 	int mWriteLen;
 	int mReadPoint;
 
+	int mSWClock;
+	int mSW1FQ;
+	int mSW1DClk;
+	int mSW1SwpClk;
+	int mSW1Len;
+	int mSW1Index;
+	int mSW1ChVal;
+	int mSW1EnvCounter;
+	int mSW1EnvDClk;
+
 	int mTDClk;
-	int mTSeq[32];
+	int mTSeq[32];                                    
 	int mTSeqIndex;
 	int mTFQ;
 	int mTTimer;
@@ -123,6 +130,45 @@ protected:
 	int mRenderClock;
 	int mNextRenderClock;
 	int mCPUfq;
+
+	class Sweep {
+	public:
+		Sweep(uint8_t& reg, int& fq, int& len);
+		virtual ~Sweep();
+
+	public:
+		void reset();
+		void clock();
+
+	protected:
+		uint8_t& mReg;
+		int& mFQ;
+		int& mSWLen;
+
+		int mDClock;
+		int mLen;
+		int mDirection; // 0: down, 1: up
+	};
+
+	class Envelope {
+	public:
+		Envelope(uint8_t& reg);
+		virtual ~Envelope();
+
+	public:
+		void reset();
+		void clock();
+		uint8_t getVol();
+
+	protected:
+		uint8_t& mReg;
+
+		int mDClock;
+		uint8_t   mVal;
+	};
+
+	Sweep*    mSweep1;
+	Envelope* mEnv1;
 };
 
 #endif

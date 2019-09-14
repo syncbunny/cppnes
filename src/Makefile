@@ -15,7 +15,7 @@ main.o:main.cpp config.h core.h cpu.h nes.h ppu.h apu.h mapper.h
 	${CXX} ${CXXFLAGS} main.cpp
 config.o:config.cpp config.h
 	${CXX} ${CXXFLAGS} config.cpp
-nes.o: nes.cpp nes.h config.h cpu.h ppu.h openalapu.h vppu.h mapper.h vmapper.h core.h
+nes.o: nes.cpp nes.h config.h cpu.h ppu.h apu.h openalapu.h vppu.h mapper.h vmapper.h core.h 
 	${CXX} ${CXXFLAGS} nes.cpp
 mapper.o: mapper.cpp mapper.h ppu.h cpu.h
 	${CXX} ${CXXFLAGS} mapper.cpp
