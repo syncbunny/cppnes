@@ -131,6 +131,33 @@ protected:
 	int mNextRenderClock;
 	int mCPUfq;
 
+	class Envelope;
+
+	class Square {
+	public:
+		Square(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, uint8_t& reg4, int& len, int& fq, APU::Envelope* env);
+		virtual ~Square();
+
+	public:
+		void clock();
+		int val() const {
+			return mVal;
+		}
+
+	protected:
+		uint8_t& mReg1; // $4000, $4004
+		uint8_t& mReg2; // $4001, $4005
+		uint8_t& mReg3; // $4002, $4006
+		uint8_t& mReg4; // $4003, $4007
+		int& mFQ;
+		int& mLen;
+
+		APU::Envelope* mEnv;
+		int mDClock;
+		int mSQIndex;
+		int mVal;
+	};
+
 	class Sweep {
 	public:
 		Sweep(uint8_t& reg, int& fq, int& len);
@@ -169,6 +196,7 @@ protected:
 
 	Sweep*    mSweep1;
 	Envelope* mEnv1;
+	Square*   mSquare1;
 };
 
 #endif

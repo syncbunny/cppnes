@@ -41,6 +41,7 @@ int gSQ12Val[] = {0, 1, 0, 0, 0, 0, 0, 0};
 int gSQ25Val[] = {0, 1, 1, 0, 0, 0, 0, 0};
 int gSQ50Val[] = {0, 1, 1, 1, 1, 0, 0, 0};
 int gSQ75Val[] = {1, 0, 0, 0, 0, 0, 0, 1};
+int* gSQVal[]   = {gSQ12Val, gSQ25Val, gSQ50Val, gSQ75Val};
 
 APU::APU()
 :mData(0) {
@@ -107,6 +108,7 @@ APU::APU()
 
 	mSweep1 = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
 	mEnv1 = new Envelope(this->mSW1C1);
+	mSquare1 = new Square(this->mSW1C1, this->mSW1C2, this->mSW1FQ1, this->mSW1FQ2, this->mSW1Len, this->mSW1FQ, this->mEnv1);
 }
 
 APU::~APU() {
@@ -126,7 +128,7 @@ void APU::clock() {
 	}
 
 	if (mSWClock) {
-		square1Clock();
+		mSquare1->clock();
 		mSWClock = 0;
 	} else {
 		mSWClock = 1;
@@ -145,7 +147,7 @@ void APU::clock() {
 
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
-	mData[mWritePoint] = mTChVal + mSW1ChVal;
+	mData[mWritePoint] = mTChVal + mSquare1->val();
 
 	mWriteLen++;
 	mWritePoint++;
@@ -343,6 +345,52 @@ void APU::setTWFQ2(uint8_t val) {
 
 	mTLen = gLengthVal[mTWFQ2>>3];
 	mTLCntReload = 1;
+}
+
+APU::Square::Square(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, uint8_t& reg4, int& len, int& fq, APU::Envelope* env)
+:mReg1(reg1), mReg2(reg2), mReg3(reg3), mReg4(reg4), mLen(len), mFQ(fq), mEnv(env) {
+	mDClock = 0;
+	mSQIndex = 0;
+}
+
+APU::Square::~Square() {
+}
+
+void APU::Square::clock() {
+	if (mDClock > 0) {
+		mDClock--;
+	}
+
+	if (mDClock == 0) {
+		uint8_t vol = mEnv->getVol(); // [0 - 15]
+		mVal -= vol*128; // [-2048 - 2047]
+
+		int* sqval;
+		switch(mReg1 >> 6) {
+		case 0x00:
+			sqval = gSQ12Val;
+			break;
+		case 0x01:
+			sqval = gSQ25Val;
+			break;
+		case 0x02:
+			sqval = gSQ50Val;
+			break;
+		case 0x03:
+			sqval = gSQ75Val;
+			break;
+		}
+		mVal = sqval[mSQIndex]*vol*256;
+		mVal -= vol*128;
+
+		if (mLen != 0) {
+			mSQIndex++;
+			if (mSQIndex >= 8) {
+				mSQIndex = 0;
+			}
+		}
+		mDClock = mFQ;
+	}
 }
 
 APU::Sweep::Sweep(uint8_t& reg, int& fq, int& len)
