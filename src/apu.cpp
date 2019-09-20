@@ -156,47 +156,6 @@ void APU::render() {
 	}
 }
 
-void APU::square1Clock() {
-	if (mSW1DClk > 0) {
-		mSW1DClk--;
-	}
-	if (mSW1DClk == 0) {
-		int* sqval;
-		switch(mSW1C1 >> 6) {
-		case 0x00:
-			sqval = gSQ12Val;
-			break;
-		case 0x01:
-			sqval = gSQ25Val;
-			break;
-		case 0x02:
-			sqval = gSQ50Val;
-			break;
-		case 0x03:
-			sqval = gSQ75Val;
-			break;
-		}
-		uint8_t vol = mEnv1->getVol();
-		mSW1ChVal = sqval[mSW1Index]*vol*256;
-		mSW1ChVal -= vol*128;
-		if (mSW1Len != 0) {
-			mSW1Index++;
-		}
-		if (mSW1Index >= 8) {
-			mSW1Index = 0;
-		}
-		mSW1DClk = mSW1FQ;
-	}
-
-	if ((mChCtrl & CH_CTL_SQ1) == 0) {
-		mSW1ChVal = 0;
-	}
-
-	if (mSW1FQ < 8 || mSW1FQ > 0x7FF) {
-		mSW1ChVal = 0;
-	}
-}
-
 void APU::triangleClock() {
 	if (mTDClk > 0) {
 		mTDClk--;
