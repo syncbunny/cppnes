@@ -24,12 +24,8 @@ public:
 	virtual void setSW2C2(uint8_t val) {
 		mSW2C2 = val;
 	}
-	virtual void setSW2FQ1(uint8_t val) {
-		mSW2FQ1 = val;
-	}
-	virtual void setSW2FQ2(uint8_t val) {
-		mSW2FQ2 = val;
-	}
+	virtual void setSW2FQ1(uint8_t val);
+	virtual void setSW2FQ2(uint8_t val);
 	virtual void setTWC(uint8_t val);
 	virtual void setTWFQ1(uint8_t val);
 	virtual void setTWFQ2(uint8_t val);
@@ -54,9 +50,7 @@ public:
 	virtual void setDMC4(uint8_t val) {
 		mDMC4 = val;
 	}
-	virtual void setChCtrl(uint8_t val) {
-		mChCtrl = val;
-	}
+	virtual void setChCtrl(uint8_t val);
 	virtual uint8_t getChCtrl() const {
 		return mChCtrl;
 	}
@@ -103,13 +97,9 @@ protected:
 
 	int mSWClock;
 	int mSW1FQ;
-	int mSW1DClk;
-	int mSW1SwpClk;
 	int mSW1Len;
-	int mSW1Index;
-	int mSW1ChVal;
-	int mSW1EnvCounter;
-	int mSW1EnvDClk;
+	int mSW2FQ;
+	int mSW2Len;
 
 	int mTDClk;
 	int mTSeq[32];                                    
@@ -196,6 +186,10 @@ protected:
 	Sweep*    mSweep1;
 	Envelope* mEnv1;
 	Square*   mSquare1;
+
+	Sweep*    mSweep2;
+	Envelope* mEnv2;
+	Square*   mSquare2;
 };
 
 #endif

@@ -2,9 +2,9 @@
 #include "apu.h"
 
 // $4000, $4004
-#define ENVELOPE_LOOP   (0x20)
-#define ENVELOPE_ENABLE (0x10)
-#define ENVELOPE_FQ     (0x0F)
+#define ENVELOPE_LOOP    (0x20)
+#define ENVELOPE_DISABLE (0x10)
+#define ENVELOPE_FQ      (0x0F)
 
 // $4001, $4005
 #define SWEEP_ENABLE (0x80)
@@ -31,6 +31,7 @@
 #define RENDER_FQ (44100)
 
 #define CALC_SW1FQ()  (mSW1FQ = mSW1FQ2 & 0x07, mSW1FQ <<=8, mSW1FQ |= mSW1FQ1)
+#define CALC_SW2FQ()  (mSW2FQ = mSW2FQ2 & 0x07, mSW2FQ <<=8, mSW2FQ |= mSW2FQ1)
 
 int gLengthVal[] = {
 /* 00-0F */  10,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
@@ -50,6 +51,28 @@ APU::APU()
 		mData[i] = 0;
 	}
 
+	// Clear registers
+	mSW1C1        = 0;
+        mSW1C2        = 0;
+        mSW1FQ1       = 0;
+        mSW1FQ2       = 0;
+        mSW2C1        = 0;
+        mSW2C2        = 0;
+        mSW2FQ1       = 0;
+        mSW2FQ2       = 0;
+        mTWC          = 0;
+        mTWFQ1        = 0;
+        mTWFQ2        = 0;
+        mNZC          = 0;
+        mNZFQ1        = 0;
+        mNZFQ2        = 0;
+        mDMC1         = 0;
+        mDMC2         = 0;
+        mDMC3         = 0;
+        mDMC4         = 0;
+        mChCtrl       = 0;
+        mFrameCounter = 0;
+
 	mReadPoint = 0;
 	mWritePoint = 0;
 	mWriteLen = 0;
@@ -57,10 +80,8 @@ APU::APU()
 	mFrameSQCount = 0;
 
 	mSWClock = 0;
-	mSW1DClk = 0;
 	mSW1Len = 0;
-	mSW1ChVal = 0;
-	mSW1Index = 0;
+	mSW2Len = 0;
 
 	mTTimer = 0;
 	mTSeq[0] = 0x0F;
@@ -84,7 +105,7 @@ APU::APU()
 	mTSeq[18] = 0x02;
 	mTSeq[19] = 0x03;
 	mTSeq[20] = 0x04;
-	mTSeq[1] = 0x05;
+	mTSeq[21] = 0x05;
 	mTSeq[22] = 0x06;
 	mTSeq[23] = 0x07;
 	mTSeq[24] = 0x08;
@@ -109,6 +130,10 @@ APU::APU()
 	mSweep1 = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
 	mEnv1 = new Envelope(this->mSW1C1);
 	mSquare1 = new Square(this->mSW1C1, this->mSW1C2, this->mSW1FQ1, this->mSW1FQ2, this->mSW1Len, this->mSW1FQ, this->mEnv1);
+
+	mSweep2 = new Sweep(this->mSW2C2, this->mSW2FQ, this->mSW2Len);
+	mEnv2 = new Envelope(this->mSW2C1);
+	mSquare2 = new Square(this->mSW2C1, this->mSW2C2, this->mSW2FQ1, this->mSW2FQ2, this->mSW2Len, this->mSW2FQ, this->mEnv2);
 }
 
 APU::~APU() {
@@ -117,6 +142,10 @@ APU::~APU() {
 	}
 	delete mSweep1;
 	delete mEnv1;
+	delete mSquare1;
+	delete mSweep2;
+	delete mEnv2;
+	delete mSquare2;
 }
 
 void APU::clock() {
@@ -131,6 +160,7 @@ void APU::clock() {
 		mSquare1->clock();
 		mSWClock = 0;
 	} else {
+		mSquare2->clock();
 		mSWClock = 1;
 	}
 	triangleClock();
@@ -147,7 +177,7 @@ void APU::clock() {
 
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
-	mData[mWritePoint] = mTChVal + mSquare1->val();
+	mData[mWritePoint] = mTChVal + mSquare1->val() + mSquare2->val();
 
 	mWriteLen++;
 	mWritePoint++;
@@ -185,27 +215,35 @@ void APU::frameClock() {
 		case 0:
 			mEnv1->clock();
 			mSweep1->clock();
+			mEnv2->clock();
+			mSweep2->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
 		case 1:
 			mEnv1->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
+			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
 			mEnv1->clock();
 			mSweep1->clock();
+			mEnv2->clock();
+			mSweep2->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
 		case 3:
 			mEnv1->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
+			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
 			mFrameSQCount = 0;
 			break;
 		}
@@ -214,19 +252,24 @@ void APU::frameClock() {
 		switch (mFrameSQCount) {
 		case 0:
 			mEnv1->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
 		case 1:
 			mSweep1->clock();
 			mEnv1->clock();
+			mSweep2->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
+			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
 			mEnv1->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
@@ -236,9 +279,12 @@ void APU::frameClock() {
 		case 4:
 			mSweep1->clock();
 			mEnv1->clock();
+			mSweep2->clock();
+			mEnv2->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
+			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
 			mFrameSQCount = 0;
 			break;
 		}
@@ -269,6 +315,11 @@ void APU::setSW1FQ1(uint8_t val) {
 	CALC_SW1FQ();
 }
 
+void APU::setSW2FQ1(uint8_t val) {
+	mSW2FQ1 = val;
+	CALC_SW2FQ();
+}
+
 void APU::setSW1FQ2(uint8_t val) {
 	mSW1FQ2 = val;
 	CALC_SW1FQ();
@@ -277,6 +328,16 @@ void APU::setSW1FQ2(uint8_t val) {
 
 	mSweep1->reset();
 	mEnv1->reset();
+}
+
+void APU::setSW2FQ2(uint8_t val) {
+	mSW2FQ2 = val;
+	CALC_SW2FQ();
+
+	mSW2Len = gLengthVal[mSW2FQ2>>3];
+
+	mSweep2->reset();
+	mEnv2->reset();
 }
 
 void APU::setTWC(uint8_t val) {
@@ -306,23 +367,38 @@ void APU::setTWFQ2(uint8_t val) {
 	mTLCntReload = 1;
 }
 
+void APU::setChCtrl(uint8_t val) {
+	mChCtrl = val;
+
+	if ((mChCtrl & CH_CTL_TRI) == 0) {
+		mTLen = 0;
+	}
+	if ((mChCtrl & CH_CTL_SQ1) == 0) {
+		mSW1Len = 0;
+	}
+	if ((mChCtrl & CH_CTL_SQ2) == 0) {
+		mSW2Len = 0;
+	}
+}
+
 APU::Square::Square(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, uint8_t& reg4, int& len, int& fq, APU::Envelope* env)
 :mReg1(reg1), mReg2(reg2), mReg3(reg3), mReg4(reg4), mLen(len), mFQ(fq), mEnv(env) {
-	mDClock = 0;
-	mSQIndex = 0;
+	this->mDClock = 0;
+	this->mSQIndex = 0;
+	this->mVal = 0;
 }
 
 APU::Square::~Square() {
 }
 
 void APU::Square::clock() {
-	if (mDClock > 0) {
-		mDClock--;
+	if (this->mDClock > 0) {
+		this->mDClock--;
 	}
 
-	if (mDClock == 0) {
+	if (this->mDClock == 0) {
 		uint8_t vol = mEnv->getVol(); // [0 - 15]
-		mVal -= vol*128; // [-2048 - 2047]
+		this->mVal -= vol*128; // [-2048 - 2047]
 
 		int* sqval;
 		switch(mReg1 >> 6) {
@@ -339,16 +415,16 @@ void APU::Square::clock() {
 			sqval = gSQ75Val;
 			break;
 		}
-		mVal = sqval[mSQIndex]*vol*256;
-		mVal -= vol*128;
+		this->mVal = sqval[mSQIndex]*vol*256;
+		this->mVal -= vol*128;
 
-		if (mLen != 0) {
-			mSQIndex++;
-			if (mSQIndex >= 8) {
-				mSQIndex = 0;
+		if (this->mLen != 0) {
+			this->mSQIndex++;
+			if (this->mSQIndex >= 8) {
+				this->mSQIndex = 0;
 			}
 		}
-		mDClock = mFQ;
+		this->mDClock = mFQ;
 	}
 }
 
@@ -360,18 +436,19 @@ APU::Sweep::~Sweep() {
 }
 
 void APU::Sweep::reset() {
-	mDClock = (mReg & SWEEP_FQ) >> 4;
+	this->mDClock = (mReg & SWEEP_FQ) >> 4;
 }
 
 void APU::Sweep::clock() {
+	if ((mReg & SWEEP_ENABLE) == 0) {
+		return;
+	}
+
 	if (this->mDClock > 0) {
 		this->mDClock--;
 		return;
 	}
 
-	if ((mReg & SWEEP_ENABLE) == 0) {
-		return;
-	}
 	int val = mReg & SWEEP_VAL;
 	if (val == 0) {
 		return;
@@ -388,44 +465,46 @@ void APU::Sweep::clock() {
 	}
 	if (newFQ >= 8 && newFQ <= 0x7ff) {
 		mFQ = newFQ;
+	} else {
+		mLen = 0;
 	}
 }
 
 APU::Envelope::Envelope(uint8_t& reg)
 : mReg(reg){
-	mDClock = 0;
-	mVal = 0;
+	this->mDClock = 0;
+	this->mVal = 0;
 }
 
 APU::Envelope::~Envelope() {
 }
 
 void APU::Envelope::reset() {
-	this->mDClock = mReg & ENVELOPE_FQ;
-	mVal = 0x0F;
+	this->mDClock = this->mReg & ENVELOPE_FQ;
+	this->mVal = 0x0F;
 }
 
 void APU::Envelope::clock() {
-	if (mDClock > 0) {
+	if ((this->mReg & ENVELOPE_DISABLE) == 0) {
+		return;
+	}
+	if (this->mDClock > 0) {
 		this->mDClock--;
 		return;
 	}
-	if ((mReg & ENVELOPE_ENABLE) == 0) {
-		return;
-	}
-	if (mVal > 0) {
-		mVal--;
-	}
-	if (mVal == 0 && (mReg & ENVELOPE_LOOP)) {
-		this->mDClock = mReg & ENVELOPE_FQ;
+
+	if (this->mVal > 0) {
+		this->mVal--;
+	} else if (this->mReg & ENVELOPE_LOOP) {
+		this->mDClock = this->mReg & ENVELOPE_FQ;
 		mVal = 0x0F;
 	}
 }
 
 uint8_t APU::Envelope::getVol() {
-	if (mReg & ENVELOPE_ENABLE) {
-		return mVal;
+	if (this->mReg & ENVELOPE_DISABLE) {
+		return (this->mReg & 0x0F);
 	} else {
-		return (mReg & 0x0F);
+		return this->mVal;
 	}
 }
