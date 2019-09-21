@@ -181,6 +181,7 @@ protected:
 
 		int mDClock;
 		uint8_t   mVal;
+		bool mReset;
 	};
 
 	Sweep*    mSweep1;

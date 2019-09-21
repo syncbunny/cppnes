@@ -117,8 +117,6 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 		mAPU->setDMC4(val);
 	} else if (addr == 0x4014) {
 		this->startDMA(val);
-	} else if (addr == 0x4014) {
-		this->startDMA(val);
 	} else if (addr == 0x4015) {
 		mAPU->setChCtrl(val);
 	} else if (addr == 0x4016) {

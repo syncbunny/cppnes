@@ -2,9 +2,9 @@
 #include "apu.h"
 
 // $4000, $4004
-#define ENVELOPE_LOOP    (0x20)
-#define ENVELOPE_DISABLE (0x10)
-#define ENVELOPE_FQ      (0x0F)
+#define ENVELOPE_LOOP     (0x20)
+#define ENVELOPE_CONSTANT (0x10)
+#define ENVELOPE_FQ       (0x0F)
 
 // $4001, $4005
 #define SWEEP_ENABLE (0x80)
@@ -474,20 +474,24 @@ APU::Envelope::Envelope(uint8_t& reg)
 : mReg(reg){
 	this->mDClock = 0;
 	this->mVal = 0;
+	this->mReset = false;
 }
 
 APU::Envelope::~Envelope() {
 }
 
 void APU::Envelope::reset() {
-	this->mDClock = this->mReg & ENVELOPE_FQ;
-	this->mVal = 0x0F;
+	mReset = true;
 }
 
 void APU::Envelope::clock() {
-	if ((this->mReg & ENVELOPE_DISABLE) == 0) {
+	if (mReset) {
+		this->mDClock = this->mReg & ENVELOPE_FQ;
+		this->mVal = 0x0F;
+		mReset = false;
 		return;
 	}
+
 	if (this->mDClock > 0) {
 		this->mDClock--;
 		return;
@@ -502,7 +506,7 @@ void APU::Envelope::clock() {
 }
 
 uint8_t APU::Envelope::getVol() {
-	if (this->mReg & ENVELOPE_DISABLE) {
+	if (this->mReg & ENVELOPE_CONSTANT) {
 		return (this->mReg & 0x0F);
 	} else {
 		return this->mVal;
