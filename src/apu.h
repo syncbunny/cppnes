@@ -124,7 +124,7 @@ protected:
 
 	class Square {
 	public:
-		Square(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, uint8_t& reg4, int& len, int& fq, APU::Envelope* env);
+		Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env);
 		virtual ~Square();
 
 	public:
@@ -135,16 +135,22 @@ protected:
 
 	protected:
 		uint8_t& mReg1; // $4000, $4004
-		uint8_t& mReg2; // $4001, $4005
-		uint8_t& mReg3; // $4002, $4006
-		uint8_t& mReg4; // $4003, $4007
-		int& mFQ;
 		int& mLen;
+		int& mFQ;
 
 		APU::Envelope* mEnv;
 		int mDClock;
 		int mSQIndex;
 		int mVal;
+	};
+
+	class Noise {
+	public:
+		Noise(Envelope* env);
+		virtual ~Noise();
+
+	public:
+		APU::Envelope* mEnv;
 	};
 
 	class Sweep {
@@ -162,7 +168,6 @@ protected:
 		int& mSWLen;
 
 		int mDClock;
-		int mLen;
 		int mDirection; // 0: down, 1: up
 	};
 
@@ -191,6 +196,9 @@ protected:
 	Sweep*    mSweep2;
 	Envelope* mEnv2;
 	Square*   mSquare2;
+
+	Noise*    mNoise;
+	Envelope* mNoiseEnv;
 };
 
 #endif

@@ -167,6 +167,9 @@ void CPU::nmi() {
 	mClockRemain = 6;
 }
 
+void CPU::irq() {
+}
+
 void CPU::reset() {
 	mResetFlag = true;
 	mClockRemain = 6;
@@ -176,6 +179,13 @@ void CPU::clock() {
 	if (mNMIFlag) {
 		doNMI();
 		return;
+	}
+	if (mIRQFlag) {
+		if ((mP&FLG_I) == 0) {
+			doIRQ();
+			return;
+		}
+		mIRQFlag = false;
 	}
 	if (mResetFlag) {
 		doReset();
@@ -677,6 +687,7 @@ void CPU::coreDump(Core* c) const {
 	_cpu.clockRemain = mClockRemain;
 	_cpu.resetFlag   = mResetFlag;
 	_cpu.NMIFlag     = mNMIFlag;
+	_cpu.IRQFlag     = mIRQFlag;
 	_cpu.BRKFlag     = mBRKFlag;
 
 	c->setCPU(_cpu);
@@ -694,6 +705,7 @@ void CPU::loadCore(Core* c) {
 	this->mClockRemain = _cpu.clockRemain;
 	this->mResetFlag   = _cpu.resetFlag;
 	this->mNMIFlag     = _cpu.NMIFlag;
+	this->mIRQFlag     = _cpu.IRQFlag;
 	this->mBRKFlag     = _cpu.BRKFlag;
 }
 
@@ -717,6 +729,17 @@ void CPU::doNMI() {
 	mPC = mMapper->read2Bytes(NMI_VECTOR);
 
 	mNMIFlag = false;
+	mClockRemain = 6;
+}
+
+void CPU::doIRQ() {
+	CLEAR_B();
+	PUSH(mPC >> 8);
+	PUSH(mPC&0xFF);
+	PUSH(mP);
+	SET_I();
+	mPC = mMapper->read2Bytes(BRK_VECTOR);
+
 	mClockRemain = 6;
 }
 

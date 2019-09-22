@@ -20,6 +20,7 @@ public:
 	void powerOn();
 	void reset();
 	void nmi();
+	void irq();
 	void clock();
 	void startDMA();
 	void coreDump(Core* c) const;
@@ -30,6 +31,7 @@ protected:
 	void updateP(uint8_t n);
 	void doReset();
 	void doNMI();
+	void doIRQ();
 	void buildADC_APvcTable();
 	void buildSBC_APvcTable();
 
@@ -45,6 +47,7 @@ protected:
 
 	bool mResetFlag;
 	bool mNMIFlag;
+	bool mIRQFlag;
 	bool mBRKFlag;
 
 	APvc *mADC_APvcTable;

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "apu.h"
+#include "events.h"
 
 // $4000, $4004
 #define ENVELOPE_LOOP     (0x20)
@@ -126,14 +127,18 @@ APU::APU()
 	mCPUfq = CPU_FQ;
 	mNextRenderClock = mCPUfq/RENDER_FQ;
 	mRenderClock = 0;
+	mSW1FQ = mSW2FQ = 0;
 
-	mSweep1 = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
-	mEnv1 = new Envelope(this->mSW1C1);
-	mSquare1 = new Square(this->mSW1C1, this->mSW1C2, this->mSW1FQ1, this->mSW1FQ2, this->mSW1Len, this->mSW1FQ, this->mEnv1);
+	mSweep1  = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
+	mEnv1    = new Envelope(this->mSW1C1);
+	mSquare1 = new Square(this->mSW1C1, this->mSW1Len, this->mSW1FQ, this->mEnv1);
 
-	mSweep2 = new Sweep(this->mSW2C2, this->mSW2FQ, this->mSW2Len);
-	mEnv2 = new Envelope(this->mSW2C1);
-	mSquare2 = new Square(this->mSW2C1, this->mSW2C2, this->mSW2FQ1, this->mSW2FQ2, this->mSW2Len, this->mSW2FQ, this->mEnv2);
+	mSweep2  = new Sweep(this->mSW2C2, this->mSW2FQ, this->mSW2Len);
+	mEnv2    = new Envelope(this->mSW2C1);
+	mSquare2 = new Square(this->mSW2C1, this->mSW2Len, this->mSW2FQ, this->mEnv2);
+
+	mNoiseEnv = new Envelope(this->mNZC);
+	mNoise    = new Noise(this->mNoiseEnv);
 }
 
 APU::~APU() {
@@ -244,6 +249,12 @@ void APU::frameClock() {
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
+
+			if ((mFrameCounter & NO_IRQ) == 0) {
+	                	EventQueue& eq = EventQueue::getInstance();
+				eq.push(new EventIRQ());
+			}
+
 			mFrameSQCount = 0;
 			break;
 		}
@@ -381,8 +392,8 @@ void APU::setChCtrl(uint8_t val) {
 	}
 }
 
-APU::Square::Square(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, uint8_t& reg4, int& len, int& fq, APU::Envelope* env)
-:mReg1(reg1), mReg2(reg2), mReg3(reg3), mReg4(reg4), mLen(len), mFQ(fq), mEnv(env) {
+APU::Square::Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env)
+:mReg1(reg1), mLen(len), mFQ(fq), mEnv(env) {
 	this->mDClock = 0;
 	this->mSQIndex = 0;
 	this->mVal = 0;
@@ -428,15 +439,23 @@ void APU::Square::clock() {
 	}
 }
 
+APU::Noise::Noise(Envelope* env)
+: mEnv(env) {
+}
+
+APU::Noise::~Noise() {
+}
+
 APU::Sweep::Sweep(uint8_t& reg, int& fq, int& len)
 :mReg(reg), mFQ(fq), mSWLen(len) {
+	mDClock = 0;
 }
 
 APU::Sweep::~Sweep() {
 }
 
 void APU::Sweep::reset() {
-	this->mDClock = (mReg & SWEEP_FQ) >> 4;
+	this->mDClock = (uint8_t)((mReg & SWEEP_FQ)) >> 4;
 }
 
 void APU::Sweep::clock() {
@@ -454,9 +473,6 @@ void APU::Sweep::clock() {
 		return;
 	}
 
-	if (mFQ < 8 || mFQ > 0x7ff) {
-		return;
-	}
 	int newFQ;
 	if ((mReg & SWEEP_DIR) == 0) {	
 		newFQ = mFQ + (mFQ >> val);
@@ -466,7 +482,7 @@ void APU::Sweep::clock() {
 	if (newFQ >= 8 && newFQ <= 0x7ff) {
 		mFQ = newFQ;
 	} else {
-		mLen = 0;
+		mSWLen = 0;
 	}
 }
 
