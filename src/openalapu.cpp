@@ -3,7 +3,7 @@
 #include "openalapu.h"
 
 OpenALAPU::OpenALAPU()
-:APU(), FrameWorker() {
+:VAPU(), FrameWorker() {
 	this->initialize();
 }
 

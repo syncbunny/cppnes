@@ -2,6 +2,7 @@
 #define NES_H
 
 #include "mapper.h"
+#include "frame.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "pad.h"
@@ -31,6 +32,7 @@ protected:
 	void coreDump(Core* c) const;
 
 protected:
+	Frame* mFrame;
 	Mapper* mMapper;
 	CPU* mCPU;
 	PPU* mPPU;

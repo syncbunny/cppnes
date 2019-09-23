@@ -24,12 +24,8 @@ public:
 	virtual void setSW2C2(uint8_t val) {
 		mSW2C2 = val;
 	}
-	virtual void setSW2FQ1(uint8_t val) {
-		mSW2FQ1 = val;
-	}
-	virtual void setSW2FQ2(uint8_t val) {
-		mSW2FQ2 = val;
-	}
+	virtual void setSW2FQ1(uint8_t val);
+	virtual void setSW2FQ2(uint8_t val);
 	virtual void setTWC(uint8_t val);
 	virtual void setTWFQ1(uint8_t val);
 	virtual void setTWFQ2(uint8_t val);
@@ -54,16 +50,11 @@ public:
 	virtual void setDMC4(uint8_t val) {
 		mDMC4 = val;
 	}
-	virtual void setChCtrl(uint8_t val) {
-		mChCtrl = val;
-	}
-	virtual uint8_t getChCtrl() const {
-		return mChCtrl;
-	}
+	virtual void setChCtrl(uint8_t val);
+	virtual uint8_t getChCtrl();
 	virtual void setFrameCounter(uint8_t val);
 
 protected:
-	virtual void square1Clock();
 	virtual void triangleClock();
 	virtual void frameClock();
 	virtual void triangleLinerCounterClock();
@@ -104,13 +95,9 @@ protected:
 
 	int mSWClock;
 	int mSW1FQ;
-	int mSW1DClk;
-	int mSW1SwpClk;
 	int mSW1Len;
-	int mSW1Index;
-	int mSW1ChVal;
-	int mSW1EnvCounter;
-	int mSW1EnvDClk;
+	int mSW2FQ;
+	int mSW2Len;
 
 	int mTDClk;
 	int mTSeq[32];                                    
@@ -126,10 +113,44 @@ protected:
 	// FrameSequencer stuff
 	int mDFrameClock;
 	int mFrameSQCount; // [0, 1, 2, 3] or [0, 1, 2, 3, 4]
+	bool mFrameInterrupt;
 
 	int mRenderClock;
 	int mNextRenderClock;
 	int mCPUfq;
+
+	class Envelope;
+
+	class Square {
+	public:
+		Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env);
+		virtual ~Square();
+
+	public:
+		void clock();
+		int val() const {
+			return mVal;
+		}
+
+	protected:
+		uint8_t& mReg1; // $4000, $4004
+		int& mLen;
+		int& mFQ;
+
+		APU::Envelope* mEnv;
+		int mDClock;
+		int mSQIndex;
+		int mVal;
+	};
+
+	class Noise {
+	public:
+		Noise(Envelope* env);
+		virtual ~Noise();
+
+	public:
+		APU::Envelope* mEnv;
+	};
 
 	class Sweep {
 	public:
@@ -146,7 +167,6 @@ protected:
 		int& mSWLen;
 
 		int mDClock;
-		int mLen;
 		int mDirection; // 0: down, 1: up
 	};
 
@@ -165,10 +185,19 @@ protected:
 
 		int mDClock;
 		uint8_t   mVal;
+		bool mReset;
 	};
 
 	Sweep*    mSweep1;
 	Envelope* mEnv1;
+	Square*   mSquare1;
+
+	Sweep*    mSweep2;
+	Envelope* mEnv2;
+	Square*   mSquare2;
+
+	Noise*    mNoise;
+	Envelope* mNoiseEnv;
 };
 
 #endif

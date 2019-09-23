@@ -164,6 +164,10 @@ void NES::clock() {
 			}
 			mCPU->nmi();
 			break;
+		case Event::TYPE_IRQ:
+			printf("NES::clock: IRQ!\n");
+			mCPU->irq();
+			break;
 		case Event::TYPE_DMA:
 			mDClockCPU = 514*12; // Stop CPU 514 clocks
 			break;

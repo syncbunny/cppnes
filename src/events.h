@@ -31,6 +31,7 @@ class Event {
 public:
 	enum {
 		TYPE_NMI,
+		TYPE_IRQ,
 		TYPE_DMA,
 
 		TYPE_CAPTURE,
@@ -57,6 +58,13 @@ class EventNMI: public Event {
 public:
 	EventNMI()
         :Event(TYPE_NMI) {
+	}
+};
+
+class EventIRQ: public Event {
+public:
+	EventIRQ()
+        :Event(TYPE_IRQ) {
 	}
 };
 

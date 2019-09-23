@@ -11,6 +11,7 @@ struct CPUCore {
 	int clockRemain;
 	bool resetFlag;
 	bool NMIFlag;
+	bool IRQFlag;
 	bool BRKFlag;
 };
 
