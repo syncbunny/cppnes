@@ -18,6 +18,7 @@
 #define TWC_VAL      (0x7F)
 
 // $4015
+#define CH_CTL_INTERRUPT (0x40)
 #define CH_CTL_DMC   (0x10)
 #define CH_CTL_NOIZE (0x08)
 #define CH_CTL_TRI   (0x04)
@@ -79,6 +80,7 @@ APU::APU()
 	mWriteLen = 0;
 	mDFrameClock = 0;
 	mFrameSQCount = 0;
+	mFrameInterrupt = false;
 
 	mSWClock = 0;
 	mSW1Len = 0;
@@ -251,6 +253,7 @@ void APU::frameClock() {
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
 
 			if ((mFrameCounter & NO_IRQ) == 0) {
+				mFrameInterrupt = true;
 	                	EventQueue& eq = EventQueue::getInstance();
 				eq.push(new EventIRQ());
 			}
@@ -392,6 +395,27 @@ void APU::setChCtrl(uint8_t val) {
 	}
 }
 
+uint8_t APU::getChCtrl() {
+	uint8_t ret = 0;
+
+	if (mFrameInterrupt) {
+		ret |= CH_CTL_INTERRUPT;
+		mFrameInterrupt = false;
+	}
+
+	if (mTLen) {
+		ret |= CH_CTL_TRI;
+	}
+	if (mSW1Len) {
+		ret |= CH_CTL_SQ1;
+	}
+	if (mSW2Len) {
+		ret |= CH_CTL_SQ2;
+	}
+
+	return ret;
+}
+
 APU::Square::Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env)
 :mReg1(reg1), mLen(len), mFQ(fq), mEnv(env) {
 	this->mDClock = 0;
@@ -403,6 +427,7 @@ APU::Square::~Square() {
 }
 
 void APU::Square::clock() {
+	//printf("SQ::clock::DClock=%d\n", mDClock);
 	if (this->mDClock > 0) {
 		this->mDClock--;
 	}

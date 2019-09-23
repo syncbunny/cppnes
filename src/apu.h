@@ -51,9 +51,7 @@ public:
 		mDMC4 = val;
 	}
 	virtual void setChCtrl(uint8_t val);
-	virtual uint8_t getChCtrl() const {
-		return mChCtrl;
-	}
+	virtual uint8_t getChCtrl();
 	virtual void setFrameCounter(uint8_t val);
 
 protected:
@@ -115,6 +113,7 @@ protected:
 	// FrameSequencer stuff
 	int mDFrameClock;
 	int mFrameSQCount; // [0, 1, 2, 3] or [0, 1, 2, 3, 4]
+	bool mFrameInterrupt;
 
 	int mRenderClock;
 	int mNextRenderClock;
