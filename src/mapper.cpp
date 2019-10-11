@@ -100,13 +100,13 @@ void Mapper::write1Byte(uint16_t addr, uint8_t val) {
 	} else if (addr == 0x400B) {
 		mAPU->setTWFQ2(val);
 	} else if (addr == 0x400C) {
-		mAPU->setNZC(val);
+		mAPU->setNC(val);
 	} else if (addr == 0x400D) {
 		// unused
 	} else if (addr == 0x400E) {
-		mAPU->setNZFQ1(val);
+		mAPU->setNFQ1(val);
 	} else if (addr == 0x400F) {
-		mAPU->setNZFQ2(val);
+		mAPU->setNFQ2(val);
 	} else if (addr == 0x4010) {
 		mAPU->setDMC1(val);
 	} else if (addr == 0x4011) {
