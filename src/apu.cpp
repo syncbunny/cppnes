@@ -526,7 +526,7 @@ void APU::Noise::clock() {
 	if (mDClock == 0) {
 		uint8_t vol = mEnv->getVol();
 
-		if (mLen == 0) {
+		if (mLen > 0) {
 			// Shift and xor
 			uint16_t tmp;
 			mSR &= 0x7FFF; // clear bit 15
@@ -540,10 +540,6 @@ void APU::Noise::clock() {
 			if (exor) {
 				mSR |= 0x4000;
 			}
-
-	//		mLen = gNoiseFQ[mReg2&0x0F];
-		} else {
-			mLen--;
 		}
 
 		if ((mSR & 1) == 0) {
