@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "apu.h"
 #include "events.h"
 
@@ -39,12 +38,23 @@ int gLengthVal[] = {
 /* 00-0F */  10,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
 /* 10-1F */  12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
+int gNoiseLenVal[] = {
+	0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0060, 0x0080, 0x00A0,
+	0x00CA, 0x00FE, 0x017C, 0x01FC, 0x02FA, 0x03F8, 0x07F2, 0x0FE4
+};
 
 int gSQ12Val[] = {0, 1, 0, 0, 0, 0, 0, 0};
 int gSQ25Val[] = {0, 1, 1, 0, 0, 0, 0, 0};
 int gSQ50Val[] = {0, 1, 1, 1, 1, 0, 0, 0};
 int gSQ75Val[] = {1, 0, 0, 0, 0, 0, 0, 1};
 int* gSQVal[]   = {gSQ12Val, gSQ25Val, gSQ50Val, gSQ75Val};
+
+int gNoiseFQ[] = {
+	0x004, 0x008, 0x010, 0x020,
+	0x040, 0x060, 0x080, 0x0A0,
+	0x0CA, 0x0FE, 0x17C, 0x1FC,
+	0x2FA, 0x3F8, 0x7F2, 0xFE4
+};
 
 APU::APU()
 :mData(0) {
@@ -65,9 +75,9 @@ APU::APU()
         mTWC          = 0;
         mTWFQ1        = 0;
         mTWFQ2        = 0;
-        mNZC          = 0;
-        mNZFQ1        = 0;
-        mNZFQ2        = 0;
+        mNC           = 0;
+        mNFQ1         = 0;
+        mNFQ2         = 0;
         mDMC1         = 0;
         mDMC2         = 0;
         mDMC3         = 0;
@@ -82,10 +92,12 @@ APU::APU()
 	mFrameSQCount = 0;
 	mFrameInterrupt = false;
 
+	// Square channel stuff
 	mSWClock = 0;
 	mSW1Len = 0;
 	mSW2Len = 0;
 
+	// Triangle channel stuff
 	mTTimer = 0;
 	mTSeq[0] = 0x0F;
 	mTSeq[1] = 0x0E;
@@ -126,6 +138,9 @@ APU::APU()
 	mTLCnt = 0;
 	mTLCntReload = 0;
 
+	// Noise channel stuff
+	mNLen = 0;
+
 	mCPUfq = CPU_FQ;
 	mNextRenderClock = mCPUfq/RENDER_FQ;
 	mRenderClock = 0;
@@ -139,8 +154,8 @@ APU::APU()
 	mEnv2    = new Envelope(this->mSW2C1);
 	mSquare2 = new Square(this->mSW2C1, this->mSW2Len, this->mSW2FQ, this->mEnv2);
 
-	mNoiseEnv = new Envelope(this->mNZC);
-	mNoise    = new Noise(this->mNoiseEnv);
+	mNoiseEnv = new Envelope(this->mNC);
+	mNoise    = new Noise(this->mNC, mNFQ1, mNFQ2, mNLen, this->mNoiseEnv);
 }
 
 APU::~APU() {
@@ -165,6 +180,7 @@ void APU::clock() {
 
 	if (mSWClock) {
 		mSquare1->clock();
+		mNoise->clock();
 		mSWClock = 0;
 	} else {
 		mSquare2->clock();
@@ -184,7 +200,7 @@ void APU::clock() {
 
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
-	mData[mWritePoint] = mTChVal + mSquare1->val() + mSquare2->val();
+	mData[mWritePoint] = mTChVal + mSquare1->val() + mSquare2->val() + mNoise->val();
 
 	mWriteLen++;
 	mWritePoint++;
@@ -224,16 +240,19 @@ void APU::frameClock() {
 			mSweep1->clock();
 			mEnv2->clock();
 			mSweep2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
 		case 1:
 			mEnv1->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
+			if (((mNC&0x20) == 0) && (mNLen > 0)) mNLen--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
@@ -241,17 +260,19 @@ void APU::frameClock() {
 			mSweep1->clock();
 			mEnv2->clock();
 			mSweep2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
 		case 3:
 			mEnv1->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
-
+			if (((mNC&0x20) == 0) && (mNLen > 0)) mNLen--;
 			if ((mFrameCounter & NO_IRQ) == 0) {
 				mFrameInterrupt = true;
 	                	EventQueue& eq = EventQueue::getInstance();
@@ -267,6 +288,7 @@ void APU::frameClock() {
 		case 0:
 			mEnv1->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 1;
 			break;
@@ -275,15 +297,18 @@ void APU::frameClock() {
 			mEnv1->clock();
 			mSweep2->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
+			if (((mNC&0x20) == 0) && (mNLen > 0)) mNLen--;
 			mFrameSQCount = 2;
 			break;
 		case 2:
 			mEnv1->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			mFrameSQCount = 3;
 			break;
@@ -295,10 +320,12 @@ void APU::frameClock() {
 			mEnv1->clock();
 			mSweep2->clock();
 			mEnv2->clock();
+			mNoiseEnv->clock();
 			this->triangleLinerCounterClock();
 			if (((mTWC&0x80) == 0) && (mTLen > 0)) mTLen--;
 			if (((mSW1C1&0x20) == 0) && (mSW1Len > 0)) mSW1Len--;
 			if (((mSW2C1&0x20) == 0) && (mSW2Len > 0)) mSW2Len--;
+			if (((mNC&0x20) == 0) && (mNLen > 0)) mNLen--;
 			mFrameSQCount = 0;
 			break;
 		}
@@ -381,9 +408,25 @@ void APU::setTWFQ2(uint8_t val) {
 	mTLCntReload = 1;
 }
 
+void APU::setNFQ1(uint8_t val) {
+	mNFQ1 = val;
+
+	mNLen = gNoiseFQ[mNFQ1&0x0F];
+}
+
+void APU::setNFQ2(uint8_t val) {
+	mNFQ2 = val;
+	mNLen = gLengthVal[mNFQ2>>3];
+
+	mNoiseEnv->reset();
+}
+
 void APU::setChCtrl(uint8_t val) {
 	mChCtrl = val;
 
+	if ((mChCtrl & CH_CTL_NOIZE) == 0) {
+		mNLen = 0;
+	}
 	if ((mChCtrl & CH_CTL_TRI) == 0) {
 		mTLen = 0;
 	}
@@ -403,6 +446,9 @@ uint8_t APU::getChCtrl() {
 		mFrameInterrupt = false;
 	}
 
+	if (mNLen) {
+		ret |= CH_CTL_NOIZE;
+	}
 	if (mTLen) {
 		ret |= CH_CTL_TRI;
 	}
@@ -427,14 +473,12 @@ APU::Square::~Square() {
 }
 
 void APU::Square::clock() {
-	//printf("SQ::clock::DClock=%d\n", mDClock);
 	if (this->mDClock > 0) {
 		this->mDClock--;
 	}
 
 	if (this->mDClock == 0) {
 		uint8_t vol = mEnv->getVol(); // [0 - 15]
-		this->mVal -= vol*128; // [-2048 - 2047]
 
 		int* sqval;
 		switch(mReg1 >> 6) {
@@ -452,7 +496,7 @@ void APU::Square::clock() {
 			break;
 		}
 		this->mVal = sqval[mSQIndex]*vol*256;
-		this->mVal -= vol*128;
+		this->mVal -= vol*128; // [-2048 - 2047]
 
 		if (this->mLen != 0) {
 			this->mSQIndex++;
@@ -464,11 +508,50 @@ void APU::Square::clock() {
 	}
 }
 
-APU::Noise::Noise(Envelope* env)
-: mEnv(env) {
+APU::Noise::Noise(uint8_t& reg1, uint8_t& reg2, uint8_t& reg3, int& len, Envelope* env)
+: mReg1(reg1), mReg2(reg2), mReg3(reg3), mLen(len),  mEnv(env) {
+	mDClock = 0;
+	mSR = 1;
+	mVal = 0;
 }
 
 APU::Noise::~Noise() {
+}
+
+void APU::Noise::clock() {
+	if (mDClock > 0) {
+		mDClock--;
+	}
+
+	if (mDClock == 0) {
+		uint8_t vol = mEnv->getVol();
+
+		if (mLen > 0) {
+			// Shift and xor
+			uint16_t tmp;
+			mSR &= 0x7FFF; // clear bit 15
+			if (mReg2&0x80) {
+				tmp = mSR >> 6;
+			} else {
+				tmp = mSR >> 1;
+			}
+			uint8_t exor = (tmp&1) ^ (mSR&1);
+			mSR >>= 1;
+			if (exor) {
+				mSR |= 0x4000;
+			}
+		}
+
+		if ((mSR & 1) == 0) {
+			mVal = vol*256;
+		} else {
+			mVal = 0;
+		}
+		
+		mVal -= vol*128;
+
+		mDClock = gLengthVal[mReg3>>3];
+	}
 }
 
 APU::Sweep::Sweep(uint8_t& reg, int& fq, int& len)

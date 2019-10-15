@@ -148,6 +148,7 @@ CPU::CPU(Mapper* mapper)
 	mClockRemain = 0;
 	mResetFlag = false;
 	mNMIFlag = false;
+	mIRQFlag = false;
 
 	buildADC_APvcTable();
 	buildSBC_APvcTable();
@@ -168,6 +169,8 @@ void CPU::nmi() {
 }
 
 void CPU::irq() {
+	mIRQFlag = true;
+	mClockRemain = 6;
 }
 
 void CPU::reset() {

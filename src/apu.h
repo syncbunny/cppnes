@@ -29,15 +29,11 @@ public:
 	virtual void setTWC(uint8_t val);
 	virtual void setTWFQ1(uint8_t val);
 	virtual void setTWFQ2(uint8_t val);
-	virtual void setNZC(uint8_t val) {
-		mNZC = val;
+	virtual void setNC(uint8_t val) {
+		mNC = val;
 	}
-	virtual void setNZFQ1(uint8_t val) {
-		mNZFQ1 = val;
-	}
-	virtual void setNZFQ2(uint8_t val) {
-		mNZFQ1 = val;
-	}
+	virtual void setNFQ1(uint8_t val);
+	virtual void setNFQ2(uint8_t val);
 	virtual void setDMC1(uint8_t val) {
 		mDMC1 = val;
 	}
@@ -78,9 +74,9 @@ protected:
 	uint8_t mTWC;          // 0x4008
 	uint8_t mTWFQ1;        // 0x400A
 	uint8_t mTWFQ2;        // 0x400B
-	uint8_t mNZC;          // 0x400C
-	uint8_t mNZFQ1;        // 0x400E
-	uint8_t mNZFQ2;        // 0x400F
+	uint8_t mNC;           // 0x400C
+	uint8_t mNFQ1;         // 0x400E
+	uint8_t mNFQ2;         // 0x400F
 	uint8_t mDMC1;         // 0x4010
 	uint8_t mDMC2;         // 0x4011
 	uint8_t mDMC3;         // 0x4012
@@ -109,6 +105,8 @@ protected:
 	int mTLen;
 	int mTLCnt;
 	int mTLCntReload;
+
+	int mNLen;
 
 	// FrameSequencer stuff
 	int mDFrameClock;
@@ -145,11 +143,25 @@ protected:
 
 	class Noise {
 	public:
-		Noise(Envelope* env);
+		Noise(uint8_t& reg1, uint8_t& ret2, uint8_t& reg3, int& len, Envelope* env);
 		virtual ~Noise();
 
 	public:
+		void clock();
+		int val() const {
+			return mVal;
+		}
+
+	protected:
+		uint8_t mReg1; // $400C
+		uint8_t mReg2; // $400E
+		uint8_t mReg3; // $400F
+		int& mLen;
+
 		APU::Envelope* mEnv;
+		int mDClock;
+		uint16_t mSR;
+		int mVal;
 	};
 
 	class Sweep {

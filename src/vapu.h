@@ -49,17 +49,17 @@ public:
 		printf("APU::setTWFQ2(%02x)\n", val);
 		APU::setTWFQ2(val);
 	}
-	virtual void setNZC(uint8_t val) {
-		printf("APU::setNZC(%02x)\n", val);
-		APU::setNZC(val);
+	virtual void setNC(uint8_t val) {
+		printf("APU::setNC(%02x)\n", val);
+		APU::setNC(val);
 	}
-	virtual void setNZFQ1(uint8_t val) {
-		printf("APU::setNZFQ1(%02x)\n", val);
-		APU::setNZFQ1(val);
+	virtual void setNFQ1(uint8_t val) {
+		printf("APU::setNFQ1(%02x)\n", val);
+		APU::setNFQ1(val);
 	}
-	virtual void setNZFQ2(uint8_t val) {
-		printf("APU::setNZFQ2(%02x)\n", val);
-		APU::setNZFQ2(val);
+	virtual void setNFQ2(uint8_t val) {
+		printf("APU::setNFQ2(%02x)\n", val);
+		APU::setNFQ2(val);
 	}
 	virtual void setDMC1(uint8_t val) {
 		printf("APU::setDMC1(%02x)\n", val);
