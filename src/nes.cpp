@@ -69,9 +69,13 @@ NES::NES(Renderer* r) {
 	mMapper->setAPU(mAPU);
 	mMapper->setPAD(mPAD);
 
-	mProfiler = new Profiler();
 	mFrameWorkers.push_back(openalAPU);
-	mFrameWorkers.push_back(mProfiler);
+	if (conf->getProfileEnabled()) {
+		mProfiler = new Profiler();
+		mFrameWorkers.push_back(mProfiler);
+	} else {
+		mProfiler = 0;
+	}
 }
 
 NES::~NES() {

@@ -51,6 +51,9 @@ bool analyzeOpt(int argc, char* argv[]) {
 		case 'c':
 			conf->setCorePath(std::string(optarg));
 			break;
+		case 'g':
+			conf->setProfileEnabled(true);
+			break;
 		case 'v':
 			conf->setVarbose(true);
 			break;

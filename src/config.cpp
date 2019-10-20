@@ -2,6 +2,7 @@
 
 Config::Config() {
 	mVarbose = false;
+	mProfileEnabled = false;
 }
 
 Config::~Config() {

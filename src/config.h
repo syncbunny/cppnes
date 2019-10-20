@@ -41,8 +41,16 @@ public:
 		return mCorePath;
 	}
 
+	void setProfileEnabled(bool b) {
+		mProfileEnabled = b;
+	}
+	bool getProfileEnabled() const {
+		return mProfileEnabled;
+	}
+
 protected:
 	bool mVarbose;
+	bool mProfileEnabled;
 	std::string mROMPath;
 	std::string mCorePath;
 };
