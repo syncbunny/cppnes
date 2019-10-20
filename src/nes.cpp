@@ -197,10 +197,11 @@ void NES::clock() {
 		delete evt;
 	}
 
+	bool profile = conf->getProfileEnabled();
 	if (mDClockAPU == 0) {
-		mProfiler->apuStart();
+		if (profile) { mProfiler->apuStart(); }
 		mAPU->clock();
-		mProfiler->apuEnd();
+		if (profile) { mProfiler->apuEnd(); }
 		mDClockAPU = 11;
 	} else {
 		mDClockAPU--;
@@ -210,18 +211,18 @@ void NES::clock() {
 		if (mPPU->isFrameStart()) {
 			this->frameStart();
 		}
-		mProfiler->ppuStart();
+		if (profile) { mProfiler->ppuStart(); }
 		mPPU->clock();
-		mProfiler->ppuEnd();
+		if (profile) { mProfiler->ppuEnd(); }
 		mDClockPPU = 3;
 	} else {
 		mDClockPPU--;
 	}
 
 	if (mDClockCPU == 0) {
-		mProfiler->cpuStart();
+		if (profile) { mProfiler->cpuStart(); }
 		mCPU->clock();
-		mProfiler->cpuEnd();
+		if (profile) { mProfiler->cpuEnd(); }
 		mDClockCPU = 11;
 	} else {
 		mDClockCPU--;
