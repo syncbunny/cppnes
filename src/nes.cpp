@@ -1,3 +1,4 @@
+#include <chrono>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -58,7 +59,6 @@ NES::NES(Renderer* r) {
 	if (r) {
 		mPPU->bindRenderer(r);
 	}
-	mPPU->addFrameWorker(openalAPU);
 	mWRAM = new uint8_t[0x0800];
 	for (int i = 0; i < 0x0800; i++) mWRAM[i] = 0x4F;
 	mERAM = new uint8_t[0x2000];
@@ -68,6 +68,10 @@ NES::NES(Renderer* r) {
 	mMapper->setPPU(mPPU);
 	mMapper->setAPU(mAPU);
 	mMapper->setPAD(mPAD);
+
+	mProfiler = new Profiler();
+	mFrameWorkers.push_back(openalAPU);
+	mFrameWorkers.push_back(mProfiler);
 }
 
 NES::~NES() {
@@ -190,21 +194,30 @@ void NES::clock() {
 	}
 
 	if (mDClockAPU == 0) {
+		mProfiler->apuStart();
 		mAPU->clock();
+		mProfiler->apuEnd();
 		mDClockAPU = 11;
 	} else {
 		mDClockAPU--;
 	}
 
 	if (mDClockPPU == 0) {
+		if (mPPU->isFrameStart()) {
+			this->frameStart();
+		}
+		mProfiler->ppuStart();
 		mPPU->clock();
+		mProfiler->ppuEnd();
 		mDClockPPU = 3;
 	} else {
 		mDClockPPU--;
 	}
 
 	if (mDClockCPU == 0) {
+		mProfiler->cpuStart();
 		mCPU->clock();
+		mProfiler->cpuEnd();
 		mDClockCPU = 11;
 	} else {
 		mDClockCPU--;
@@ -268,4 +281,12 @@ void NES::loadCore(Core* core) {
 	memcpy(mWRAM, core->getWRAM(), 0x0800);
 	mCPU->loadCore(core);
 	mPPU->loadCore(core);
+}
+
+void NES::frameStart() {
+	std::list<FrameWorker*>::iterator it;
+	for (it = mFrameWorkers.begin(); it != mFrameWorkers.end(); ++it) {
+		FrameWorker* fw = *it;
+		fw->atFrameStart();
+	}
 }
