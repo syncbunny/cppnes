@@ -20,6 +20,7 @@
 #include "events.h"
 #include "renderer.h"
 #include "core.h"
+#include "logger.h"
 
 #define FLAG6_V_MIRROR           (0x01)
 #define FLAG6_HAS_BATTARY_BACKUP (0x02)
@@ -136,7 +137,7 @@ bool NES::loadCartridge(const char* path) {
 	if (this->cartridgeHasTrainer()) {
 		offset += 512;
 	}
-	printf("mapper:%d\n", this->getMapperNo());
+	Logger::getInstance()->log(Logger::DEBUG, "mapper:%d\n", this->getMapperNo());
 	mMapper->setPROM(&mCartridgeMem[offset], pROMSize*16*1024);
 	mMapper->setCROM(&mCartridgeMem[offset+pROMSize*16*1024], cROMSize*8*1024);
 	mMapper->setNo(this->getMapperNo());
@@ -163,17 +164,16 @@ void NES::clock() {
 	// NTSC: 21477272.72 Hz  Base/12  Base/4 Base/(12*7457)
 
 	Config* conf = Config::getInstance();
+	Logger* logger = Logger::getInstance();
 	Event* evt = EventQueue::getInstance().pop();
 	if (evt) {
 		switch(evt->getType()) {
 		case Event::TYPE_NMI:
-			if (conf->getVarbose()) {
-				printf("NES::clock: NMI!\n");
-			}
+			logger->log(Logger::DEBUG, "NES::clock: NMI!\n");
 			mCPU->nmi();
 			break;
 		case Event::TYPE_IRQ:
-			printf("NES::clock: IRQ!\n");
+			logger->log(Logger::DEBUG, "NES::clock: IRQ!\n");
 			mCPU->irq();
 			break;
 		case Event::TYPE_DMA:
