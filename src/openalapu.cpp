@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdexcept>
 #include "openalapu.h"
+#include "logger.h"
 
 OpenALAPU::OpenALAPU()
-:VAPU(), FrameWorker() {
+:APU(), FrameWorker() {
 	this->initialize();
 }
 
@@ -45,12 +46,12 @@ bool gc = false;
 void OpenALAPU::atFrameStart() {
 	ALenum error;
 
-	printf("mWriteLen=%d\n", mWriteLen);
+	Logger::getInstance()->log(Logger::DEBUG, "mWriteLen=%d\n", mWriteLen);
 	// en-queue buffer
 	while (mWriteLen > 0) {
 		ALuint bufId;
 		if (!this->getUnusedBuffer(&bufId)) {
-			printf("NO BUFFER\n");
+			Logger::getInstance()->log(Logger::DEBUG, "NO BUFFER\n");
 			break;
 		}
 		ALuint bufLen = mWriteLen;
@@ -60,7 +61,7 @@ void OpenALAPU::atFrameStart() {
 		if (mReadPoint + bufLen >= DATA_LENGTH) {
 			bufLen = DATA_LENGTH - mReadPoint;
 		}
-		printf("alBufferData(%d, AL_FORMAT_MONO16, %d, %lu, 44100)\n", bufId, mReadPoint, bufLen*sizeof(short));
+		Logger::getInstance()->log(Logger::DEBUG, "alBufferData(%d, AL_FORMAT_MONO16, %d, %lu, 44100)\n", bufId, mReadPoint, bufLen*sizeof(short));
 		alBufferData(bufId, AL_FORMAT_MONO16, &mData[mReadPoint], bufLen*sizeof(short), 44100);
 		if ((error = alGetError()) != AL_NO_ERROR) {
 			char msg[128];
@@ -93,7 +94,7 @@ void OpenALAPU::atFrameStart() {
 		}
 	}
 
-	printf("alu state=0x%04x\n", state);
+	Logger::getInstance()->log(Logger::DEBUG, "alu state=0x%04x\n", state);
 	// un-queue processed buffer
 	ALint nrProcessed;
 	alGetSourcei(mSources[0], AL_BUFFERS_PROCESSED, &nrProcessed);
@@ -105,7 +106,7 @@ void OpenALAPU::atFrameStart() {
 }
 
 void OpenALAPU::bufferQueued(ALuint bufId) {
-	printf("bufferQueued(%d)\n", bufId);
+	Logger::getInstance()->log(Logger::DEBUG, "bufferQueued(%d)\n", bufId);
 	for (int i = 0; i < NUM_BUFFERS; i++) {
 		if (this->mBufferInfo[i].bufId == bufId) {
 			this->mBufferInfo[i].inUse = true;
@@ -115,7 +116,7 @@ void OpenALAPU::bufferQueued(ALuint bufId) {
 }
 
 void OpenALAPU::bufferProcessed(ALuint bufId) {
-	printf("bufferProcessed(%d)\n", bufId);
+	Logger::getInstance()->log(Logger::DEBUG, "bufferProcessed(%d)\n", bufId);
 	for (int i = 0; i < NUM_BUFFERS; i++) {
 		if (this->mBufferInfo[i].bufId == bufId) {
 			this->mBufferInfo[i].inUse = false;
@@ -128,7 +129,7 @@ bool OpenALAPU::getUnusedBuffer(ALuint* bufId) {
 	for (int i = 0; i < NUM_BUFFERS; i++) {
 		if (!this->mBufferInfo[i].inUse) {
 			*bufId = this->mBufferInfo[i].bufId;
-			printf("getUnusedBuffer(->%d)\n", *bufId);
+			Logger::getInstance()->log(Logger::DEBUG, "getUnusedBuffer(->%d)\n", *bufId);
 			return true;
 		}
 	}

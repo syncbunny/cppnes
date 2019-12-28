@@ -46,14 +46,29 @@ bool analyzeOpt(int argc, char* argv[]) {
 	int opt;
 	opterr = 0;
 
-	while((opt = getopt(argc, argv, "c:v")) != -1) {
+	while((opt = getopt(argc, argv, "c:l:v")) != -1) {
 		switch(opt) {
 		case 'c':
 			conf->setCorePath(std::string(optarg));
 			break;
+		case 'g':
+			conf->setProfileEnabled(true);
+			break;
+		case 'l':
+			{
+				char* endptr;
+				long n = strtol(optarg, &endptr, 10);
+				if (n == 0 && *endptr != '\0') {
+					fprintf(stderr, "Usage: nes [-v] [-l <loglevel>] [-c <corepath>] <rompath>\n");
+					return false;
+				} else {
+					conf->setLoglevel(n);
+				}
+			}
+			break;
 		case 'v':
 			conf->setVarbose(true);
-			break;
+	 		break;
 		default:
 			fprintf(stderr, "Usage: nes [-v] [-c <corepath>] <rompath>\n");
 			return false;

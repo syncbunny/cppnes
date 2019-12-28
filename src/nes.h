@@ -6,6 +6,8 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "pad.h"
+#include "frameworker.h"
+#include "profiler.h"
 
 class Renderer;
 class Core;
@@ -30,6 +32,7 @@ protected:
 	uint8_t getMapperNo();
 	void dump6000();
 	void coreDump(Core* c) const;
+	void frameStart();
 
 protected:
 	Frame* mFrame;
@@ -48,6 +51,9 @@ protected:
 	int mDMAWait;
 
 	uint32_t mClocks;
+
+	Profiler* mProfiler;
+	std::list<FrameWorker*> mFrameWorkers;
 };
 
 #endif

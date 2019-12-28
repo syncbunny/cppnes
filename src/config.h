@@ -27,6 +27,13 @@ public:
 		return mVarbose;
 	}
 
+	void setLoglevel(int n) {
+		mLoglevel = n;
+	}
+	int getLoglevel() const {
+		return mLoglevel;
+	}
+
 	void setROMPath(const std::string& path) {
 		mROMPath = path;
 	}
@@ -41,8 +48,17 @@ public:
 		return mCorePath;
 	}
 
+	void setProfileEnabled(bool b) {
+		mProfileEnabled = b;
+	}
+	bool getProfileEnabled() const {
+		return mProfileEnabled;
+	}
+
 protected:
 	bool mVarbose;
+	bool mProfileEnabled;
+	int mLoglevel;
 	std::string mROMPath;
 	std::string mCorePath;
 };
