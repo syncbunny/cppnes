@@ -57,7 +57,7 @@ void GLFWRenderer::createWindow() {
 		throw std::runtime_error("glfwCreateWindow failed.");
 	}
 	glfwMakeContextCurrent(mWindow);
-	glfwSwapInterval(0);
+	glfwSwapInterval(1);
 
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {

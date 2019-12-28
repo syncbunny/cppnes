@@ -6,19 +6,19 @@ LIBS=-lglfw -lGLEW
 FWS=-framework OpenGL -framework CoreVideo -framework IOKit -framework Cocoa -framework OpenAL
 
 TARGET=nes
-OBJS=main.o config.o frame.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o openalapu.o pad.o vpad.o events.o renderer.o core.o glfw.o glfwrenderer.o profiler.o
+OBJS=main.o config.o logger.o nes.o mapper.o vmapper.o cpu.o ppu.o vppu.o apu.o openalapu.o pad.o vpad.o events.o renderer.o core.o glfw.o glfwrenderer.o profiler.o
 
 ${TARGET}:${OBJS}
 	${LD} -o ${TARGET} ${OBJS} ${LDFLAGS} ${LIBS} ${FWS}
 
 main.o:main.cpp config.h core.h cpu.h nes.h ppu.h apu.h mapper.h
 	${CXX} ${CXXFLAGS} main.cpp
-config.o:config.cpp config.h
+config.o:config.cpp config.h logger.h
 	${CXX} ${CXXFLAGS} config.cpp
-nes.o: nes.cpp nes.h config.h frame.h cpu.h ppu.h apu.h openalapu.h vppu.h mapper.h vmapper.h core.h frameworker.h profiler.h
+logger.o:logger.cpp logger.h config.h
+	${CXX} ${CXXFLAGS} logger.cpp
+nes.o: nes.cpp nes.h config.h cpu.h ppu.h apu.h openalapu.h vppu.h mapper.h vmapper.h core.h frameworker.h profiler.h
 	${CXX} ${CXXFLAGS} nes.cpp
-frame.o: frame.cpp frame.h
-	${CXX} ${CXXFLAGS} frame.cpp
 mapper.o: mapper.cpp mapper.h ppu.h cpu.h
 	${CXX} ${CXXFLAGS} mapper.cpp
 vmapper.o: vmapper.cpp vmapper.h mapper.h

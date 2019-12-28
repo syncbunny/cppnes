@@ -7,8 +7,8 @@
 #include "vapu.h"
 #include "frameworker.h"
 
-//class OpenALAPU:public APU, public FrameWorker {
-class OpenALAPU:public VAPU, public FrameWorker {
+class OpenALAPU:public APU, public FrameWorker {
+//class OpenALAPU:public VAPU, public FrameWorker {
 public:
 	OpenALAPU();
 	virtual ~OpenALAPU();
