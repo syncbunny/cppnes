@@ -118,10 +118,11 @@ protected:
 	int mCPUfq;
 
 	class Envelope;
+	class Sweep;
 
 	class Square {
 	public:
-		Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env);
+		Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env, APU::Sweep* sweep);
 		virtual ~Square();
 
 	public:
@@ -136,6 +137,7 @@ protected:
 		int& mFQ;
 
 		APU::Envelope* mEnv;
+		APU::Sweep* mSweep;
 		int mDClock;
 		int mSQIndex;
 		int mVal;
@@ -172,6 +174,9 @@ protected:
 	public:
 		void reset();
 		void clock();
+		bool stopped() const {
+			return mStopped;
+		}
 
 	protected:
 		uint8_t& mReg;
@@ -180,6 +185,7 @@ protected:
 
 		int mDClock;
 		int mDirection; // 0: down, 1: up
+		bool mStopped;
 	};
 
 	class Envelope {

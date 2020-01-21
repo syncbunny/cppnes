@@ -148,11 +148,11 @@ APU::APU()
 
 	mSweep1  = new Sweep(this->mSW1C2, this->mSW1FQ, this->mSW1Len);
 	mEnv1    = new Envelope(this->mSW1C1);
-	mSquare1 = new Square(this->mSW1C1, this->mSW1Len, this->mSW1FQ, this->mEnv1);
+	mSquare1 = new Square(this->mSW1C1, this->mSW1Len, this->mSW1FQ, this->mEnv1, this->mSweep1);
 
 	mSweep2  = new Sweep(this->mSW2C2, this->mSW2FQ, this->mSW2Len);
 	mEnv2    = new Envelope(this->mSW2C1);
-	mSquare2 = new Square(this->mSW2C1, this->mSW2Len, this->mSW2FQ, this->mEnv2);
+	mSquare2 = new Square(this->mSW2C1, this->mSW2Len, this->mSW2FQ, this->mEnv2, this->mSweep2);
 
 	mNoiseEnv = new Envelope(this->mNC);
 	mNoise    = new Noise(this->mNC, mNFQ1, mNFQ2, mNLen, this->mNoiseEnv);
@@ -201,6 +201,7 @@ void APU::clock() {
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
 	mData[mWritePoint] = mTChVal + mSquare1->val() + mSquare2->val() + mNoise->val();
+	//mData[mWritePoint] =  mSquare1->val();
 
 	mWriteLen++;
 	mWritePoint++;
@@ -462,8 +463,8 @@ uint8_t APU::getChCtrl() {
 	return ret;
 }
 
-APU::Square::Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env)
-:mReg1(reg1), mLen(len), mFQ(fq), mEnv(env) {
+APU::Square::Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env, APU::Sweep* sweep)
+:mReg1(reg1), mLen(len), mFQ(fq), mEnv(env), mSweep(sweep) {
 	this->mDClock = 0;
 	this->mSQIndex = 0;
 	this->mVal = 0;
@@ -497,6 +498,9 @@ void APU::Square::clock() {
 		}
 		this->mVal = sqval[mSQIndex]*vol*256;
 		this->mVal -= vol*128; // [-2048 - 2047]
+		if (mSweep->stopped()) {
+			this->mVal = 0;
+		}
 
 		if (this->mLen != 0) {
 			this->mSQIndex++;
@@ -557,6 +561,7 @@ void APU::Noise::clock() {
 APU::Sweep::Sweep(uint8_t& reg, int& fq, int& len)
 :mReg(reg), mFQ(fq), mSWLen(len) {
 	mDClock = 0;
+	mStopped = false;
 }
 
 APU::Sweep::~Sweep() {
@@ -575,6 +580,7 @@ void APU::Sweep::clock() {
 		this->mDClock--;
 		return;
 	}
+	this->mDClock = (uint8_t)((mReg & SWEEP_FQ)) >> 4;
 
 	int val = mReg & SWEEP_VAL;
 	if (val == 0) {
@@ -589,7 +595,9 @@ void APU::Sweep::clock() {
 	}
 	if (newFQ >= 8 && newFQ <= 0x7ff) {
 		mFQ = newFQ;
+		mStopped = false;
 	} else {
+		mStopped = true;
 		mSWLen = 0;
 	}
 }
@@ -624,9 +632,9 @@ void APU::Envelope::clock() {
 	if (this->mVal > 0) {
 		this->mVal--;
 	} else if (this->mReg & ENVELOPE_LOOP) {
-		this->mDClock = this->mReg & ENVELOPE_FQ;
 		mVal = 0x0F;
 	}
+	this->mDClock = this->mReg & ENVELOPE_FQ;
 }
 
 uint8_t APU::Envelope::getVol() {
