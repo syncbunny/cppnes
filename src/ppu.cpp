@@ -161,6 +161,9 @@ void PPU::setScroll(uint8_t val) {
 		mScrollY = val;
 		mWriteMode = 0;
 	}
+
+	uint8_t nt = (mScrollY >= 240)? 0xFE:0xFC;
+	mCR1 &= nt;
 }
 
 void PPU::setWriteAddr(uint8_t a) {
