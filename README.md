@@ -11,7 +11,6 @@ None(only mapper-zero is supported).
 
 ## Known probrem (bugs)
 + Super Mario Brsos is flicking.
-+ APU Sweep unit does not work properly.
 + And many many bugs..
 
 ## Supported platform
