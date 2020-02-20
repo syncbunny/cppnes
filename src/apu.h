@@ -120,6 +120,13 @@ protected:
 	class Envelope;
 	class Sweep;
 
+	class Triangle {
+	public:
+	public:
+		void clock() {
+		}
+	};
+
 	class Square {
 	public:
 		Square(uint8_t& reg1, int& len, int& fq, APU::Envelope* env, APU::Sweep* sweep);
