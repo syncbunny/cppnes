@@ -95,8 +95,6 @@ protected:
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
 	uint8_t mSpriteMemAddr;
-	uint8_t mScrollX;
-	uint8_t mScrollY;
 	uint8_t mMirror;
 	uint16_t mLine;
 	uint16_t mLineClock;

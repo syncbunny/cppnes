@@ -155,15 +155,11 @@ void PPU::setSpriteMemVal(uint8_t v) {
 
 void PPU::setScroll(uint8_t val) {
 	if (mWriteMode == 0) {
-		mScrollX = val;
-
 		mFineX = val&0x07;
 		mT.bf1.cx = val >> 3;
 
 		mWriteMode = 1;
 	} else {
-		mScrollY = val;
-
 		mT.bf1.fy = val & 0x07;
 		mT.bf1.cy = val >> 3;
 
@@ -521,8 +517,6 @@ void PPU::coreDump(Core* c) const {
 	_ppu.scrollOffsetTarget  = mScrollOffsetTarget;
 	_ppu.writeAddr           = mWriteAddr;
 	_ppu.spriteMemAddr       = mSpriteMemAddr;
-	_ppu.scrollX             = mScrollX;
-	_ppu.scrollY             = mScrollY;
 	_ppu.mirror              = mMirror;
 	_ppu.line                = mLine;
 	_ppu.lineClock           = mLineClock;
@@ -531,6 +525,11 @@ void PPU::coreDump(Core* c) const {
 	_ppu.readBuffer          = mReadBuffer;
 	_ppu.lastBGNameTableAddr = mLastBGNameTableAddr;
 	_ppu.lastPaletteId       = mLastPaletteId;
+	_ppu.t1                  = mT.bf2.b1;
+	_ppu.t2                  = mT.bf2.b2;
+	_ppu.v1                  = mV.bf2.b1;
+	_ppu.v2                  = mV.bf2.b2;
+	_ppu.fineX               = mFineX;
 
 	memcpy(_ppu.mem, mMem, 0x4000);
 	memcpy(_ppu.spriteMem, mSpriteMem, 256);
@@ -549,8 +548,6 @@ void PPU::loadCore(Core* c) {
 	this->mScrollOffsetTarget = _ppu.scrollOffsetTarget;
 	this->mWriteAddr          = _ppu.writeAddr;
 	this->mSpriteMemAddr      = _ppu.spriteMemAddr;
-	this->mScrollX            = _ppu.scrollX;
-	this->mScrollY            = _ppu.scrollY;
 	this->mMirror             = _ppu.mirror;
 	this->mLine               = _ppu.line;
 	this->mLineClock          = _ppu.lineClock;
@@ -559,6 +556,11 @@ void PPU::loadCore(Core* c) {
 	this->mReadBuffer         = _ppu.readBuffer;
 	this->mLastBGNameTableAddr = _ppu.lastBGNameTableAddr;
 	this->mLastPaletteId       = _ppu.lastPaletteId;
+	this->mT.bf2.b1            = _ppu.t1;
+	this->mT.bf2.b2            = _ppu.t2;
+	this->mV.bf2.b1            = _ppu.v1;
+	this->mV.bf2.b2            = _ppu.v2;
+	this->mFineX               = _ppu.fineX;
 
 	memcpy(this->mMem,       _ppu.mem, 0x4000);
 	memcpy(this->mSpriteMem, _ppu.spriteMem, 256);
