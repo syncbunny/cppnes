@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream>:
 #include <stdexcept>
 #include <cstring>
 #include <stdio.h>
@@ -176,14 +176,14 @@ void PPU::setWriteAddr(uint8_t a) {
 		mWriteAddr &= 0x00FF;
 		mWriteAddr |= ((uint16_t)a)<<8;
 
-		//mT.bf2.b1 = a & 0x3F;
+		mT.bf2.b1 = a & 0x3F;
 		
 		mWriteMode = 1;
 	} else {
 		mWriteAddr &= 0xFF00;
 		mWriteAddr |= a;
 
-		//mT.bf2.b2 = a;
+		mT.bf2.b2 = a;
 
 		mWriteMode = 0;
 	}
@@ -261,12 +261,14 @@ uint8_t PPU::read() {
 
 void PPU::renderBG(int x, int y) {
 	if (x == 256) {
+		mV.bf1.n &= 0x2;
 		mV.bf1.n |= mT.bf1.n & 0x01;
 		mV.bf1.cx = mT.bf1.cx;
 	}
 	if (y == SCAN_LINES - 1) {
 		mV.bf1.cy = mT.bf1.cy;
 		mV.bf1.fy = mT.bf1.fy;
+		mV.bf1.n &= 0x01;
 		mV.bf1.n |= mT.bf1.n & 0x02;
 	}
 
@@ -285,10 +287,10 @@ void PPU::renderBG(int x, int y) {
 	int scrollY;
 	scrollX = mV.bf1.cx;
 	scrollX <<=3;
-	scrollX |= mFineX;
+	scrollX += mFineX;
 	scrollY = mV.bf1.cy;
 	scrollY <<=3;
-	scrollY |= mV.bf1.fy;
+	scrollY += mV.bf1.fy;
 	
 	if (nameTableId == 1 || nameTableId == 3) {
 		scrollX += 256;
@@ -296,12 +298,11 @@ void PPU::renderBG(int x, int y) {
 	if (nameTableId == 2 || nameTableId == 3) {
 		scrollY += 240;
 	}
-	if (x == 0) {
-		printf("mV: %02X, mT: %02X, mFineX: %d, scrollX: %d\n", mV.u16, mT.u16, mFineX, scrollX);
-	}
 
 	int xx = (x + scrollX)%512; // [0 .. 512]
 	int yy = (y + scrollY)%480; // [0 .. 512]
+	nameTableId = (xx >= 256)? 1:0;
+	nameTableId |= (yy >= 240)? 2:0;
 
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
@@ -313,17 +314,24 @@ void PPU::renderBG(int x, int y) {
 	// calc nametable address
 	int u = xx/8; // [0 .. 64]
 	int v = yy/8; // [0 .. 64]
+	if (x == 128) {
+		printf("mV: %04X, mT: %04X, mFineX: %d, scrollX: %d, u=%d, ntid=%d\n", mV.u16, mT.u16, mFineX, scrollX, u, nameTableId);
+	}
 	if (u >= 32) {
 		u -= 32;
+/*
 		if (mMirror == MIRROR_V) {
 			nameTableId = overFlowNTIdMirrorV[nameTableId];
 		}
+*/
 	}
 	if (v >= 30) {
 		v -= 30;
+/*
 		if (mMirror == MIRROR_H) {
 			nameTableId = overFlowNTIdMirrorH[nameTableId];
 		}
+*/
 	}
 
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
