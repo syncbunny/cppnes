@@ -1,4 +1,4 @@
-#include <iostream>:
+#include <iostream>
 #include <stdexcept>
 #include <cstring>
 #include <stdio.h>
@@ -304,35 +304,21 @@ void PPU::renderBG(int x, int y) {
 	nameTableId = (xx >= 256)? 1:0;
 	nameTableId |= (yy >= 240)? 2:0;
 
+	// calc nametable address
+	int u = (xx/8)%32; // [0 .. 32]
+	int v = (yy/8)%30; // [0 .. 30]
+
+	uint16_t mirrorHNTId[] { 0, 0, 2, 2 };
+	uint16_t mirrorVNTId[] { 0, 1, 0, 1 };
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVNTId[nameTableId];
+	} else {
+		nameTableId = mirrorHNTId[nameTableId];
+	}
+
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
-
-	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
-	int16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
-
-	// calc nametable address
-	int u = xx/8; // [0 .. 64]
-	int v = yy/8; // [0 .. 64]
-	if (x == 128) {
-		printf("mV: %04X, mT: %04X, mFineX: %d, scrollX: %d, u=%d, ntid=%d\n", mV.u16, mT.u16, mFineX, scrollX, u, nameTableId);
-	}
-	if (u >= 32) {
-		u -= 32;
-/*
-		if (mMirror == MIRROR_V) {
-			nameTableId = overFlowNTIdMirrorV[nameTableId];
-		}
-*/
-	}
-	if (v >= 30) {
-		v -= 30;
-/*
-		if (mMirror == MIRROR_H) {
-			nameTableId = overFlowNTIdMirrorH[nameTableId];
-		}
-*/
-	}
 
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
