@@ -121,7 +121,7 @@ void PPU::clock() {
 	}
 	if (mLineClock == 0) {
 		CLEAR_SP_HIT();
-		for (int x = 0; x < 256; x++) {
+		for (int x = 0; x <= 256; x++) {
 			this->renderBG(x, mLine);
 		}
 		this->renderSprite(mLine);
@@ -155,25 +155,32 @@ void PPU::setSpriteMemVal(uint8_t v) {
 
 void PPU::setScroll(uint8_t val) {
 	if (mWriteMode == 0) {
-		mScrollX = val;
+		mFineX = val&0x07;
+		mT.bf1.cx = val >> 3;
+
 		mWriteMode = 1;
 	} else {
-		mScrollY = val;
+		mT.bf1.fy = val & 0x07;
+		mT.bf1.cy = val >> 3;
+
 		mWriteMode = 0;
 	}
-
-	uint8_t nt = (mScrollY >= 240)? 0xFE:0xFC;
-	mCR1 &= nt;
 }
 
 void PPU::setWriteAddr(uint8_t a) {
 	if (mWriteMode == 0) {
 		mWriteAddr &= 0x00FF;
 		mWriteAddr |= ((uint16_t)a)<<8;
+
+		mT.bf2.b1 = a & 0x3F;
+		
 		mWriteMode = 1;
 	} else {
 		mWriteAddr &= 0xFF00;
 		mWriteAddr |= a;
+
+		mT.bf2.b2 = a;
+
 		mWriteMode = 0;
 	}
 }
@@ -249,6 +256,18 @@ uint8_t PPU::read() {
 }
 
 void PPU::renderBG(int x, int y) {
+	if (x == 256) {
+		mV.bf1.n &= 0x2;
+		mV.bf1.n |= mT.bf1.n & 0x01;
+		mV.bf1.cx = mT.bf1.cx;
+	}
+	if (y == SCAN_LINES - 1) {
+		mV.bf1.cy = mT.bf1.cy;
+		mV.bf1.fy = mT.bf1.fy;
+		mV.bf1.n &= 0x01;
+		mV.bf1.n |= mT.bf1.n & 0x02;
+	}
+
 	if (x >= 256 || y >= 240) {
 		return;
 	}
@@ -258,10 +277,17 @@ void PPU::renderBG(int x, int y) {
 	if ((x < 8) && ((mCR2 & FLAG_DRAW_LEFT8_BG) == 0)) {
 		return;
 	}
-	int nameTableId = mCR1 & ID_NAME_TABLE_ADDR;
+	int nameTableId = mV.bf1.n;
 
-	int scrollX = mScrollX;
-	int scrollY = mScrollY;
+	int scrollX;
+	int scrollY;
+	scrollX = mV.bf1.cx;
+	scrollX <<=3;
+	scrollX += mFineX;
+	scrollY = mV.bf1.cy;
+	scrollY <<=3;
+	scrollY += mV.bf1.fy;
+	
 	if (nameTableId == 1 || nameTableId == 3) {
 		scrollX += 256;
 	}
@@ -271,30 +297,24 @@ void PPU::renderBG(int x, int y) {
 
 	int xx = (x + scrollX)%512; // [0 .. 512]
 	int yy = (y + scrollY)%480; // [0 .. 512]
+	nameTableId = (xx >= 256)? 1:0;
+	nameTableId |= (yy >= 240)? 2:0;
+
+	// calc nametable address
+	int u = (xx/8)%32; // [0 .. 32]
+	int v = (yy/8)%30; // [0 .. 30]
+
+	uint16_t mirrorHNTId[] { 0, 0, 2, 2 };
+	uint16_t mirrorVNTId[] { 0, 1, 0, 1 };
+	if (mMirror == MIRROR_V) {
+		nameTableId = mirrorVNTId[nameTableId];
+	} else {
+		nameTableId = mirrorHNTId[nameTableId];
+	}
 
 	uint16_t nameTableBase[] = {
 		0x2000, 0x2400, 0x2800, 0x2C00
 	};
-
-	nameTableId = 0;
-	uint16_t overFlowNTIdMirrorV[] { 1, 0, 3, 2 };
-	int16_t overFlowNTIdMirrorH[] { 2, 3, 0, 1 };
-
-	// calc nametable address
-	int u = xx/8; // [0 .. 64]
-	int v = yy/8; // [0 .. 64]
-	if (u >= 32) {
-		u -= 32;
-		if (mMirror == MIRROR_V) {
-			nameTableId = overFlowNTIdMirrorV[nameTableId];
-		}
-	}
-	if (v >= 30) {
-		v -= 30;
-		if (mMirror == MIRROR_H) {
-			nameTableId = overFlowNTIdMirrorH[nameTableId];
-		}
-	}
 
 	uint16_t addr = nameTableBase[nameTableId] + v*32+u;
 	uint8_t pat = mMem[addr];
@@ -497,8 +517,6 @@ void PPU::coreDump(Core* c) const {
 	_ppu.scrollOffsetTarget  = mScrollOffsetTarget;
 	_ppu.writeAddr           = mWriteAddr;
 	_ppu.spriteMemAddr       = mSpriteMemAddr;
-	_ppu.scrollX             = mScrollX;
-	_ppu.scrollY             = mScrollY;
 	_ppu.mirror              = mMirror;
 	_ppu.line                = mLine;
 	_ppu.lineClock           = mLineClock;
@@ -507,6 +525,11 @@ void PPU::coreDump(Core* c) const {
 	_ppu.readBuffer          = mReadBuffer;
 	_ppu.lastBGNameTableAddr = mLastBGNameTableAddr;
 	_ppu.lastPaletteId       = mLastPaletteId;
+	_ppu.t1                  = mT.bf2.b1;
+	_ppu.t2                  = mT.bf2.b2;
+	_ppu.v1                  = mV.bf2.b1;
+	_ppu.v2                  = mV.bf2.b2;
+	_ppu.fineX               = mFineX;
 
 	memcpy(_ppu.mem, mMem, 0x4000);
 	memcpy(_ppu.spriteMem, mSpriteMem, 256);
@@ -525,8 +548,6 @@ void PPU::loadCore(Core* c) {
 	this->mScrollOffsetTarget = _ppu.scrollOffsetTarget;
 	this->mWriteAddr          = _ppu.writeAddr;
 	this->mSpriteMemAddr      = _ppu.spriteMemAddr;
-	this->mScrollX            = _ppu.scrollX;
-	this->mScrollY            = _ppu.scrollY;
 	this->mMirror             = _ppu.mirror;
 	this->mLine               = _ppu.line;
 	this->mLineClock          = _ppu.lineClock;
@@ -535,6 +556,11 @@ void PPU::loadCore(Core* c) {
 	this->mReadBuffer         = _ppu.readBuffer;
 	this->mLastBGNameTableAddr = _ppu.lastBGNameTableAddr;
 	this->mLastPaletteId       = _ppu.lastPaletteId;
+	this->mT.bf2.b1            = _ppu.t1;
+	this->mT.bf2.b2            = _ppu.t2;
+	this->mV.bf2.b1            = _ppu.v1;
+	this->mV.bf2.b2            = _ppu.v2;
+	this->mFineX               = _ppu.fineX;
 
 	memcpy(this->mMem,       _ppu.mem, 0x4000);
 	memcpy(this->mSpriteMem, _ppu.spriteMem, 256);
