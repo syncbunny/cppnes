@@ -121,13 +121,12 @@ void PPU::clock() {
 	}
 	if (mLineClock == 0) {
 		CLEAR_SP_HIT();
-		for (int x = 0; x <= 256; x++) {
-			this->renderBG(x, mLine);
-		}
 		this->renderSprite(mLine);
 	}
 
-	//this->renderBG(mLineClock, mLine);
+	if (mCR2 & FLAG_ENABLE_BG) {
+		this->renderBG(mLineClock, mLine);
+	}
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		mLineClock -= CLOCKS_PAR_LINE;
@@ -180,6 +179,7 @@ void PPU::setWriteAddr(uint8_t a) {
 		mWriteAddr |= a;
 
 		mT.bf2.b2 = a;
+		mV = mT;
 
 		mWriteMode = 0;
 	}
@@ -256,7 +256,7 @@ uint8_t PPU::read() {
 }
 
 void PPU::renderBG(int x, int y) {
-	if (x == 256) {
+	if (x == 257) {
 		mV.bf1.n &= 0x2;
 		mV.bf1.n |= mT.bf1.n & 0x01;
 		mV.bf1.cx = mT.bf1.cx;
