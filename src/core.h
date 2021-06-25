@@ -22,13 +22,16 @@ struct PPUCore {
 	uint8_t scrollOffsetTarget;
 	uint16_t writeAddr;
 	uint8_t spriteMemAddr;
-	uint8_t scrollX;
-	uint8_t scrollY;
 	uint8_t mirror;
 	uint16_t line;
 	uint16_t lineClock;
 	uint32_t frames;
 	uint8_t writeMode;
+	uint8_t t1;
+	uint8_t t2;
+	uint8_t v1;
+	uint8_t v2;
+	uint8_t fineX;
 
 	uint8_t mem[0x4000];
 	uint8_t spriteMem[256];

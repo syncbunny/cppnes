@@ -11,6 +11,25 @@ struct Palette {
 class Renderer;
 class Core;
 
+struct ScrollBF1 {
+	uint8_t u:1; // unused
+	uint8_t fy:3;
+	uint8_t n:2;
+	uint8_t cy:5;
+	uint8_t cx:5;
+} __attribute__((packed)) ;
+
+struct ScrollBF2 {
+	uint8_t b1;
+	uint8_t b2;
+} __attribute__((packed)) ;
+
+union UScroll {
+	struct ScrollBF1 bf1;
+	struct ScrollBF2 bf2;
+	uint16_t	u16;
+};
+
 class PPU {
 public:
 	enum {
@@ -29,6 +48,8 @@ public:
 	}
 	virtual void setCR1(uint8_t v) {
 		mCR1 = v;
+
+		mT.bf1.n = v&0x03;
 	}
 	virtual void setCR2(uint8_t v) {
 		mCR2 = v;
@@ -74,13 +95,15 @@ protected:
 	uint8_t mScrollOffsetTarget;
 	uint16_t mWriteAddr;
 	uint8_t mSpriteMemAddr;
-	uint8_t mScrollX;
-	uint8_t mScrollY;
 	uint8_t mMirror;
 	uint16_t mLine;
 	uint16_t mLineClock;
 	uint32_t mFrames;
 	uint8_t mWriteMode; // 0 or 1
+
+	union UScroll mV;
+	union UScroll mT;
+	uint8_t mFineX;
 
 	uint8_t* mMem;
 	uint8_t* mSpriteMem;
