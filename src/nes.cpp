@@ -142,10 +142,10 @@ bool NES::loadCartridge(const char* path) {
 	mMapper->setCROM(&mCartridgeMem[offset+pROMSize*16*1024], cROMSize*8*1024);
 	mMapper->setNo(this->getMapperNo());
 
-	uint8_t flag6 = mCartridgeMem[5];
+	uint8_t flag6 = mCartridgeMem[6];
 	mPPU->setMirror((flag6&1)? PPU::MIRROR_V:PPU::MIRROR_H);
 
-	uint8_t flag9 = mCartridgeMem[8];
+	uint8_t flag9 = mCartridgeMem[9];
 	if (flag9 & FLAG9_TV_SYSTEM) {
 		printf("TV=PAL\n");
 	} else {
@@ -232,7 +232,7 @@ void NES::clock() {
 }
 
 bool NES::cartridgeHasTrainer() {
-	if (mCartridgeMem[5] & FLAG6_HAS_TRAINER) {
+	if (mCartridgeMem[6] & FLAG6_HAS_TRAINER) {
 		return true;
 	} else {
 		return false;
