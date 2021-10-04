@@ -12,5 +12,10 @@ None(only mapper-zero is supported).
 ## Supported platform
 + MacOS Mojave (this emulater uses OpenGL and OpenAL)
 
+## Branches
++ master: master branch
++ develop: development
++ MacOpenGL: for MacOSX with OpenGL(homebrew)
+
 ## How to build
 Go to src directory and 'make'
