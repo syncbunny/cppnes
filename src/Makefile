@@ -1,7 +1,7 @@
 CXX=clang++
-CXXFLAGS=-std=c++11 -c -I../src -Wall -O -DGL_SILENCE_DEPRECATION
+CXXFLAGS=-std=c++11 -c -I/opt/homebrew/include/ -Wall -O -DGL_SILENCE_DEPRECATION
 LD=clang++
-LDFLAGS=
+LDFLAGS=-L/opt/homebrew/lib
 LIBS=-lglfw -lGLEW
 FWS=-framework OpenGL -framework CoreVideo -framework IOKit -framework Cocoa -framework OpenAL
 
