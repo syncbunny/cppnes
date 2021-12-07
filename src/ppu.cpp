@@ -120,13 +120,16 @@ void PPU::clock() {
 		this->frameStart();
 	}
 	if (mLineClock == 0) {
-		CLEAR_SP_HIT();
 		this->renderSprite(mLine);
+	}
+	if (mLine == 261 && mLineClock == 1) {
+		CLEAR_SP_HIT();
 	}
 
 	if (mCR2 & FLAG_ENABLE_BG) {
 		this->renderBG(mLineClock, mLine);
 	}
+
 	mLineClock++;
 	if (mLineClock >= CLOCKS_PAR_LINE) {
 		mLineClock -= CLOCKS_PAR_LINE;
