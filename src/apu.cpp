@@ -38,10 +38,6 @@ int gLengthVal[] = {
 /* 00-0F */  10,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
 /* 10-1F */  12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
-int gNoiseLenVal[] = {
-	0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0060, 0x0080, 0x00A0,
-	0x00CA, 0x00FE, 0x017C, 0x01FC, 0x02FA, 0x03F8, 0x07F2, 0x0FE4
-};
 
 int gSQ12Val[] = {0, 1, 0, 0, 0, 0, 0, 0};
 int gSQ25Val[] = {0, 1, 1, 0, 0, 0, 0, 0};
@@ -201,6 +197,7 @@ void APU::clock() {
 void APU::render() {
 	//printf("mNextRenderClock=%d\n", mNextRenderClock);
 	mData[mWritePoint] = mTChVal + mSquare1->val() + mSquare2->val() + mNoise->val();
+	//mData[mWritePoint] = mTChVal;
 	//mData[mWritePoint] =  mSquare1->val();
 
 	mWriteLen++;
